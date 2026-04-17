@@ -1,0 +1,2078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAP Datasphere Implementation - Greenheck | Technical Project Document</title>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700;900&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root {
+    --primary: #1B3A4B;
+    --primary-light: #2A5F7A;
+    --accent: #C45B28;
+    --accent-light: #E87A42;
+    --bg: #FAFAF8;
+    --text: #1A1A1A;
+    --text-muted: #5A5A5A;
+    --border: #D0D0CC;
+    --table-header: #1B3A4B;
+    --table-alt: #F0F2EE;
+    --success: #2D7D46;
+    --warning: #B8860B;
+    --danger: #A83232;
+    --code-bg: #F4F4F0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 11pt;
+    line-height: 1.65;
+    color: var(--text);
+    background: var(--bg);
+  }
+
+  /* Print Controls - hidden in print */
+  .print-controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .print-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  }
+
+  .print-btn.primary {
+    background: var(--accent);
+    color: white;
+  }
+  .print-btn.primary:hover {
+    background: var(--accent-light);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(196,91,40,0.3);
+  }
+
+  .print-btn.secondary {
+    background: var(--primary);
+    color: white;
+  }
+  .print-btn.secondary:hover {
+    background: var(--primary-light);
+    transform: translateY(-2px);
+  }
+
+  /* Document Container */
+  .document {
+    max-width: 8.5in;
+    margin: 0 auto;
+    background: white;
+    box-shadow: 0 0 40px rgba(0,0,0,0.08);
+  }
+
+  /* Cover Page */
+  .cover-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(160deg, var(--primary) 0%, #0D1F2B 60%, #1B3A4B 100%);
+    color: white;
+    padding: 60px 40px;
+    position: relative;
+    overflow: hidden;
+    page-break-after: always;
+  }
+
+  .cover-page::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -30%;
+    width: 80%;
+    height: 200%;
+    background: radial-gradient(ellipse, rgba(196,91,40,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .cover-page::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-light), var(--accent));
+  }
+
+  .cover-logo-area {
+    margin-bottom: 50px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-logo-text {
+    font-size: 42pt;
+    font-weight: 900;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    font-family: 'Merriweather', serif;
+  }
+
+  .cover-divider {
+    width: 120px;
+    height: 3px;
+    background: var(--accent);
+    margin: 30px auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-title {
+    font-family: 'Merriweather', serif;
+    font-size: 26pt;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 15px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-subtitle {
+    font-size: 14pt;
+    font-weight: 300;
+    color: rgba(255,255,255,0.75);
+    max-width: 500px;
+    margin: 0 auto 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px 60px;
+    text-align: left;
+    max-width: 450px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-meta-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cover-meta-label {
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 3px;
+  }
+
+  .cover-meta-value {
+    font-size: 11pt;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+  }
+
+  .cover-classification {
+    margin-top: 50px;
+    padding: 10px 30px;
+    border: 1px solid rgba(196,91,40,0.5);
+    border-radius: 4px;
+    font-size: 9pt;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent-light);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Page Content */
+  .page-content {
+    padding: 60px 70px;
+    page-break-after: always;
+    min-height: 100vh;
+  }
+
+  .page-content:last-child {
+    page-break-after: auto;
+  }
+
+  /* Section Headers */
+  .section-number {
+    font-size: 10pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  h1.section-title {
+    font-family: 'Merriweather', serif;
+    font-size: 22pt;
+    font-weight: 900;
+    color: var(--primary);
+    line-height: 1.3;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 3px solid var(--accent);
+  }
+
+  h2.subsection-title {
+    font-family: 'Merriweather', serif;
+    font-size: 15pt;
+    font-weight: 700;
+    color: var(--primary);
+    margin-top: 35px;
+    margin-bottom: 15px;
+    padding-left: 15px;
+    border-left: 4px solid var(--accent);
+  }
+
+  h3.sub-subsection-title {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 12pt;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin-top: 25px;
+    margin-bottom: 10px;
+  }
+
+  p {
+    margin-bottom: 12px;
+    text-align: justify;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 9.5pt;
+  }
+
+  thead th {
+    background: var(--table-header);
+    color: white;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  thead th:first-child {
+    border-radius: 4px 0 0 0;
+  }
+
+  thead th:last-child {
+    border-radius: 0 4px 0 0;
+  }
+
+  tbody td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  tbody tr:nth-child(even) {
+    background: var(--table-alt);
+  }
+
+  tbody tr:hover {
+    background: #E8EBE5;
+  }
+
+  .table-caption {
+    font-size: 9pt;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Code / Technical Blocks */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--primary-light);
+    padding: 15px 18px;
+    font-family: 'Courier New', monospace;
+    font-size: 8.5pt;
+    line-height: 1.6;
+    margin: 15px 0 20px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .code-block .keyword {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .code-block .comment {
+    color: #888;
+    font-style: italic;
+  }
+
+  .code-block .string {
+    color: var(--success);
+  }
+
+  /* Architecture Diagrams */
+  .arch-diagram {
+    background: #F8F9FA;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    padding: 25px;
+    margin: 20px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 8pt;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* Callout Boxes */
+  .callout {
+    padding: 15px 20px;
+    margin: 18px 0;
+    border-radius: 6px;
+    border-left: 4px solid;
+  }
+
+  .callout.info {
+    background: #EBF5FB;
+    border-color: var(--primary-light);
+  }
+
+  .callout.warning {
+    background: #FEF9E7;
+    border-color: var(--warning);
+  }
+
+  .callout.danger {
+    background: #FDEDEC;
+    border-color: var(--danger);
+  }
+
+  .callout.success {
+    background: #EAFAF1;
+    border-color: var(--success);
+  }
+
+  .callout-title {
+    font-weight: 700;
+    font-size: 10pt;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .callout.info .callout-title { color: var(--primary-light); }
+  .callout.warning .callout-title { color: var(--warning); }
+  .callout.danger .callout-title { color: var(--danger); }
+  .callout.success .callout-title { color: var(--success); }
+
+  .callout p {
+    margin-bottom: 0;
+    font-size: 10pt;
+  }
+
+  /* Lists */
+  ul, ol {
+    margin: 10px 0 15px 25px;
+  }
+
+  li {
+    margin-bottom: 5px;
+  }
+
+  /* Bullet Variants */
+  .check-list {
+    list-style: none;
+    margin-left: 0;
+  }
+
+  .check-list li::before {
+    content: '\f00c';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    color: var(--success);
+    margin-right: 8px;
+    font-size: 9pt;
+  }
+
+  .x-list {
+    list-style: none;
+    margin-left: 0;
+  }
+
+  .x-list li::before {
+    content: '\f00d';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    color: var(--danger);
+    margin-right: 8px;
+    font-size: 9pt;
+  }
+
+  /* TOC */
+  .toc {
+    padding: 10px 0;
+  }
+
+  .toc-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 1px dotted var(--border);
+    font-size: 10.5pt;
+  }
+
+  .toc-item.level-1 {
+    font-weight: 700;
+    padding-left: 0;
+    margin-top: 8px;
+  }
+
+  .toc-item.level-2 {
+    font-weight: 400;
+    padding-left: 20px;
+    color: var(--text-muted);
+  }
+
+  .toc-item.level-3 {
+    font-weight: 300;
+    padding-left: 40px;
+    font-size: 10pt;
+    color: var(--text-muted);
+  }
+
+  .toc-page {
+    font-weight: 600;
+    color: var(--primary);
+    font-size: 10pt;
+    min-width: 25px;
+    text-align: right;
+  }
+
+  /* Page Header/Footer */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 25px;
+    font-size: 8pt;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .page-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    margin-top: 30px;
+    font-size: 8pt;
+    color: var(--text-muted);
+  }
+
+  /* Status Badge */
+  .status-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .status-badge.active { background: #D4EDDA; color: var(--success); }
+  .status-badge.planned { background: #FFF3CD; color: var(--warning); }
+  .status-badge.in-review { background: #D6EAF8; color: var(--primary-light); }
+  .status-badge.blocked { background: #F8D7DA; color: var(--danger); }
+
+  /* Flow Diagram */
+  .flow-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin: 20px 0;
+    flex-wrap: wrap;
+  }
+
+  .flow-box {
+    padding: 10px 18px;
+    border: 2px solid var(--primary);
+    border-radius: 6px;
+    font-size: 9pt;
+    font-weight: 600;
+    color: var(--primary);
+    text-align: center;
+    min-width: 100px;
+    background: white;
+  }
+
+  .flow-box.accent {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .flow-arrow {
+    font-size: 16pt;
+    color: var(--primary-light);
+    padding: 0 5px;
+  }
+
+  /* Phase Timeline */
+  .phase-timeline {
+    display: flex;
+    gap: 0;
+    margin: 20px 0;
+    position: relative;
+  }
+
+  .phase-block {
+    flex: 1;
+    text-align: center;
+    padding: 15px 8px;
+    position: relative;
+    border-top: 3px solid var(--primary);
+  }
+
+  .phase-block:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: -8px;
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px var(--primary);
+    z-index: 1;
+  }
+
+  .phase-block:first-child::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: -8px;
+    width: 16px;
+    height: 16px;
+    background: var(--success);
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px var(--primary);
+    z-index: 1;
+  }
+
+  .phase-label {
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent);
+    margin-bottom: 5px;
+  }
+
+  .phase-name {
+    font-size: 10pt;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 4px;
+  }
+
+  .phase-duration {
+    font-size: 8.5pt;
+    color: var(--text-muted);
+  }
+
+  /* KPI Grid */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin: 20px 0;
+  }
+
+  .kpi-card {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 15px;
+    text-align: center;
+  }
+
+  .kpi-value {
+    font-size: 22pt;
+    font-weight: 900;
+    font-family: 'Merriweather', serif;
+    color: var(--primary);
+  }
+
+  .kpi-label {
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* Signature Block */
+  .signature-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin: 30px 0;
+  }
+
+  .sig-line {
+    border-top: 1px solid var(--text);
+    margin-top: 40px;
+    padding-top: 8px;
+    font-size: 9pt;
+    color: var(--text-muted);
+  }
+
+  /* Print Styles */
+  @media print {
+    body {
+      background: white;
+      font-size: 10pt;
+    }
+
+    .document {
+      box-shadow: none;
+      max-width: none;
+    }
+
+    .print-controls {
+      display: none !important;
+    }
+
+    .page-content {
+      padding: 40px 55px;
+      min-height: auto;
+      page-break-after: always;
+    }
+
+    .cover-page {
+      min-height: 100vh;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    table {
+      page-break-inside: auto;
+    }
+
+    tr {
+      page-break-inside: avoid;
+    }
+
+    .arch-diagram, .code-block, .callout {
+      page-break-inside: avoid;
+    }
+
+    h2.subsection-title {
+      page-break-after: avoid;
+    }
+
+    .kpi-grid, .phase-timeline, .flow-container {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    thead th, tbody tr:nth-child(even), .flow-box.accent, .kpi-card {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .page-content { padding: 30px 25px; }
+    .cover-logo-text { font-size: 28pt; }
+    .cover-title { font-size: 18pt; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .phase-timeline { flex-direction: column; }
+    .signature-block { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Print Controls -->
+<div class="print-controls">
+  <button class="print-btn primary" onclick="window.print()">
+    <i class="fas fa-file-pdf"></i> Download PDF
+  </button>
+  <button class="print-btn secondary" onclick="document.body.classList.toggle('preview-mode')">
+    <i class="fas fa-eye"></i> Toggle Preview
+  </button>
+</div>
+
+<div class="document">
+
+  <!-- ======================== COVER PAGE ======================== -->
+  <div class="cover-page">
+    <div class="cover-logo-area">
+      <div class="cover-logo-text">GREENHECK</div>
+    </div>
+    <div class="cover-divider"></div>
+    <div class="cover-title">SAP Datasphere<br>Implementation Project</div>
+    <div class="cover-subtitle">End-to-End Technical Implementation Document for Enterprise Data Warehouse Modernization and Unified Analytics Platform</div>
+    <div class="cover-meta-grid">
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Document ID</span>
+        <span class="cover-meta-value">GH-SDS-IMP-2024-001</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Version</span>
+        <span class="cover-meta-value">3.2 (Final)</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Date</span>
+        <span class="cover-meta-value">January 2025</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Classification</span>
+        <span class="cover-meta-value">Confidential</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Author</span>
+        <span class="cover-meta-value">Enterprise Data Office</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Reviewer</span>
+        <span class="cover-meta-value">IT Architecture Board</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Sponsor</span>
+        <span class="cover-meta-value">VP, Information Technology</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Platform</span>
+        <span class="cover-meta-value">SAP Datasphere (Cloud)</span>
+      </div>
+    </div>
+    <div class="cover-classification">Confidential — Subject to Non-Disclosure Agreement</div>
+  </div>
+
+  <!-- ======================== REVISION HISTORY ======================== -->
+  <div class="page-content">
+    <div class="page-header">
+      <span>Greenheck — SAP Datasphere Implementation</span>
+      <span>GH-SDS-IMP-2024-001</span>
+    </div>
+
+    <div class="section-number">Document Control</div>
+    <h1 class="section-title">Revision History</h1>
+
+    <p class="table-caption">Table 1.1 — Document Revision Log</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Version</th>
+          <th>Date</th>
+          <th>Author</th>
+          <th>Changes</th>
+          <th>Approved By</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>0.1</td><td>2024-03-15</td><td>Data Architecture Team</td><td>Initial draft — project scope and objectives</td><td>Program Manager</td></tr>
+        <tr><td>0.5</td><td>2024-05-20</td><td>Data Architecture Team</td><td>Added architecture design, data model, integration flows</td><td>Lead Architect</td></tr>
+        <tr><td>1.0</td><td>2024-07-10</td><td>Data Architecture Team</td><td>Complete first draft with all sections</td><td>IT Director</td></tr>
+        <tr><td>1.5</td><td>2024-08-22</td><td>Data Architecture Team</td><td>Incorporated security review findings</td><td>CISO</td></tr>
+        <tr><td>2.0</td><td>2024-09-30</td><td>Data Architecture Team</td><td>Updated for Q3 sprint learnings, added performance baselines</td><td>Program Manager</td></tr>
+        <tr><td>2.5</td><td>2024-11-05</td><td>Data Architecture Team</td><td>Added UAT results, go-live readiness criteria</td><td>VP, IT</td></tr>
+        <tr><td>3.0</td><td>2024-12-10</td><td>Data Architecture Team</td><td>Pre-production validation complete, final architecture</td><td>CTO</td></tr>
+        <tr><td>3.2</td><td>2025-01-15</td><td>Data Architecture Team</td><td>Final release — incorporating all stakeholder feedback</td><td>CTO</td></tr>
+      </tbody>
+    </table>
+
+    <div class="section-number" style="margin-top:35px;">Distribution</div>
+    <h2 class="subsection-title">Distribution List</h2>
+
+    <p class="table-caption">Table 1.2 — Document Distribution</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Name</th>
+          <th>Access Level</th>
+          <th>Copy Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Chief Technology Officer</td><td>[Redacted]</td><td>Full Document</td><td>Digital (Encrypted)</td></tr>
+        <tr><td>VP, Information Technology</td><td>[Redacted]</td><td>Full Document</td><td>Digital (Encrypted)</td></tr>
+        <tr><td>Chief Information Security Officer</td><td>[Redacted]</td><td>Full Document</td><td>Digital (Encrypted)</td></tr>
+        <tr><td>Director, Enterprise Data</td><td>[Redacted]</td><td>Full Document</td><td>Digital (Encrypted)</td></tr>
+        <tr><td>SAP Program Manager</td><td>[Redacted]</td><td>Full Document</td><td>Digital (Encrypted)</td></tr>
+        <tr><td>Lead Data Architect</td><td>[Redacted]</td><td>Full Document</td><td>Digital (Encrypted)</td></tr>
+        <tr><td>SAP Delivery Lead</td><td>[Redacted]</td><td>Technical Sections</td><td>Digital (Encrypted)</td></tr>
+        <tr><td>Business Stakeholders (x4)</td><td>[Redacted]</td><td>Business Sections Only</td><td>Digital (Watermarked)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout warning">
+      <div class="callout-title"><i class="fas fa-exclamation-triangle"></i> NDA Notice</div>
+      <p>This document contains proprietary and confidential information belonging to Greenheck. Distribution, reproduction, or disclosure to unauthorized parties is strictly prohibited under the terms of the Non-Disclosure Agreement. All recipient copies are watermarked and traceable.</p>
+    </div>
+
+    <div class="page-footer">
+      <span>Confidential — Greenheck SAP Datasphere Implementation</span>
+      <span>Page 2</span>
+    </div>
+  </div>
+
+  <!-- ======================== TABLE OF CONTENTS ======================== -->
+  <div class="page-content">
+    <div class="page-header">
+      <span>Greenheck — SAP Datasphere Implementation</span>
+      <span>GH-SDS-IMP-2024-001</span>
+    </div>
+
+    <div class="section-number">Contents</div>
+    <h1 class="section-title">Table of Contents</h1>
+
+    <div class="toc">
+      <div class="toc-item level-1"><span>1. Executive Summary</span><span class="toc-page">4</span></div>
+      <div class="toc-item level-1"><span>2. Project Overview and Scope</span><span class="toc-page">6</span></div>
+      <div class="toc-item level-2"><span>2.1 Background and Business Drivers</span><span class="toc-page">6</span></div>
+      <div class="toc-item level-2"><span>2.2 Project Objectives</span><span class="toc-page">7</span></div>
+      <div class="toc-item level-2"><span>2.3 Scope Definition</span><span class="toc-page">8</span></div>
+      <div class="toc-item level-2"><span>2.4 Out of Scope</span><span class="toc-page">9</span></div>
+      <div class="toc-item level-1"><span>3. Current State Assessment</span><span class="toc-page">10</span></div>
+      <div class="toc-item level-2"><span>3.1 Existing Data Landscape</span><span class="toc-page">10</span></div>
+      <div class="toc-item level-2"><span>3.2 Pain Points and Gaps</span><span class="toc-page">11</span></div>
+      <div class="toc-item level-2"><span>3.3 Data Quality Baseline</span><span class="toc-page">12</span></div>
+      <div class="toc-item level-1"><span>4. Target State Architecture</span><span class="toc-page">13</span></div>
+      <div class="toc-item level-2"><span>4.1 Enterprise Architecture Overview</span><span class="toc-page">13</span></div>
+      <div class="toc-item level-2"><span>4.2 SAP Datasphere Architecture</span><span class="toc-page">14</span></div>
+      <div class="toc-item level-2"><span>4.3 Integration Architecture</span><span class="toc-page">16</span></div>
+      <div class="toc-item level-2"><span>4.4 Network and Connectivity</span><span class="toc-page">17</span></div>
+      <div class="toc-item level-1"><span>5. Data Model Design</span><span class="toc-page">18</span></div>
+      <div class="toc-item level-2"><span>5.1 Conceptual Data Model</span><span class="toc-page">18</span></div>
+      <div class="toc-item level-2"><span>5.2 Logical Data Model</span><span class="toc-page">19</span></div>
+      <div class="toc-item level-2"><span>5.3 Physical Data Model — Datasphere Objects</span><span class="toc-page">21</span></div>
+      <div class="toc-item level-2"><span>5.4 Analytical Model Design</span><span class="toc-page">23</span></div>
+      <div class="toc-item level-1"><span>6. End-to-End Use Cases</span><span class="toc-page">25</span></div>
+      <div class="toc-item level-2"><span>6.1 Use Case 1: Order-to-Cash Analytics</span><span class="toc-page">25</span></div>
+      <div class="toc-item level-2"><span>6.2 Use Case 2: Supply Chain Demand Planning</span><span class="toc-page">28</span></div>
+      <div class="toc-item level-2"><span>6.3 Use Case 3: Manufacturing Performance</span><span class="toc-page">31</span></div>
+      <div class="toc-item level-2"><span>6.4 Use Case 4: Product Costing and Margin Analysis</span><span class="toc-page">34</span></div>
+      <div class="toc-item level-2"><span>6.5 Use Case 5: Customer 360 and Sales Analytics</span><span class="toc-page">37</span></div>
+      <div class="toc-item level-2"><span>6.6 Use Case 6: Financial Consolidation and Reporting</span><span class="toc-page">40</span></div>
+      <div class="toc-item level-1"><span>7. Data Integration Design</span><span class="toc-page">43</span></div>
+      <div class="toc-item level-2"><span>7.1 Source-to-Target Mapping</span><span class="toc-page">43</span></div>
+      <div class="toc-item level-2"><span>7.2 Data Flow Configuration</span><span class="toc-page">44</span></div>
+      <div class="toc-item level-2"><span>7.3 SAP Integration (OData/CDI)</span><span class="toc-page">46</span></div>
+      <div class="toc-item level-2"><span>7.4 Non-SAP Integration (Data Provisioning)</span><span class="toc-page">47</span></div>
+      <div class="toc-item level-2"><span>7.5 Error Handling and Retry Logic</span><span class="toc-page">48</span></div>
+      <div class="toc-item level-1"><span>8. Security and Governance</span><span class="toc-page">49</span></div>
+      <div class="toc-item level-2"><span>8.1 Authentication and Authorization</span><span class="toc-page">49</span></div>
+      <div class="toc-item level-2"><span>8.2 Row-Level Security</span><span class="toc-page">50</span></div>
+      <div class="toc-item level-2"><span>8.3 Data Classification and Masking</span><span class="toc-page">51</span></div>
+      <div class="toc-item level-2"><span>8.4 Audit and Compliance</span><span class="toc-page">52</span></div>
+      <div class="toc-item level-1"><span>9. Performance Engineering</span><span class="toc-page">53</span></div>
+      <div class="toc-item level-2"><span>9.1 Performance Requirements</span><span class="toc-page">53</span></div>
+      <div class="toc-item level-2"><span>9.2 Optimization Strategies</span><span class="toc-page">54</span></div>
+      <div class="toc-item level-2"><span>9.3 Benchmark Results</span><span class="toc-page">55</span></div>
+      <div class="toc-item level-1"><span>10. Testing Strategy and Results</span><span class="toc-page">56</span></div>
+      <div class="toc-item level-2"><span>10.1 Test Approach</span><span class="toc-page">56</span></div>
+      <div class="toc-item level-2"><span>10.2 Test Scenarios and Results</span><span class="toc-page">57</span></div>
+      <div class="toc-item level-1"><span>11. Go-Live and Cutover Plan</span><span class="toc-page">58</span></div>
+      <div class="toc-item level-2"><span>11.1 Cutover Sequence</span><span class="toc-page">58</span></div>
+      <div class="toc-item level-2"><span>11.2 Rollback Procedure</span><span class="toc-page">59</span></div>
+      <div class="toc-item level-1"><span>12. Operations and Support Model</span><span class="toc-page">60</span></div>
+      <div class="toc-item level-2"><span>12.1 Runbook Summary</span><span class="toc-page">60</span></div>
+      <div class="toc-item level-2"><span>12.2 Monitoring and Alerting</span><span class="toc-page">60</span></div>
+      <div class="toc-item level-1"><span>13. Appendices</span><span class="toc-page">61</span></div>
+      <div class="toc-item level-2"><span>A — Glossary</span><span class="toc-page">61</span></div>
+      <div class="toc-item level-2"><span>B — Object Naming Conventions</span><span class="toc-page">62</span></div>
+      <div class="toc-item level-2"><span>C — RACI Matrix</span><span class="toc-page">63</span></div>
+      <div class="toc-item level-2"><span>D — Sign-Off Sheet</span><span class="toc-page">64</span></div>
+    </div>
+
+    <div class="page-footer">
+      <span>Confidential — Greenheck SAP Datasphere Implementation</span>
+      <span>Page 3</span>
+    </div>
+  </div>
+
+  <!-- ======================== SECTION 1: EXECUTIVE SUMMARY ======================== -->
+  <div class="page-content">
+    <div class="page-header">
+      <span>Greenheck — SAP Datasphere Implementation</span>
+      <span>GH-SDS-IMP-2024-001</span>
+    </div>
+
+    <div class="section-number">Section 1</div>
+    <h1 class="section-title">Executive Summary</h1>
+
+    <p>Greenheck, a global leader in commercial HVAC systems and industrial ventilation solutions, operates a complex manufacturing and distribution network spanning multiple facilities, product lines, and geographic regions. As the organization has grown through organic expansion and strategic acquisitions, the underlying data infrastructure has evolved into a fragmented landscape of legacy data warehouses, departmental data marts, and siloed reporting tools that no longer serve the needs of a modern, data-driven enterprise.</p>
+
+    <p>This document presents the complete technical implementation plan for replacing the existing data infrastructure with SAP Datasphere as the unified, cloud-native enterprise data warehouse and analytics platform. The initiative, referred to internally as Project Helix, represents a strategic investment in Greenheck's data capabilities and is a foundational enabler for the company's broader digital transformation roadmap.</p>
+
+    <h2 class="subsection-title">Strategic Context</h2>
+    <p>Greenheck's current analytics environment comprises over 15 distinct data repositories, including a legacy SAP BW/4HANA system (version 2.0), multiple SQL Server-based data marts built for individual business functions, and numerous Excel-based reporting processes that persist across operations and finance. This fragmentation results in inconsistent metrics, delayed reporting cycles, excessive manual reconciliation effort, and an inability to perform cross-functional analytics that span the full value chain from raw material procurement through finished goods delivery.</p>
+
+    <p>The selection of SAP Datasphere as the target platform was the result of a rigorous evaluation process that assessed six enterprise data platform options against Greenheck's specific requirements for SAP-native integration, semantic layer richness, cloud scalability, total cost of ownership, and alignment with the existing SAP application landscape (SAP S/4HANA, SAP IBP, SAP SuccessFactors).</p>
+
+    <h2 class="subsection-title">Project Overview</h2>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-value">6</div>
+        <div class="kpi-label">End-to-End Use Cases</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">23</div>
+        <div class="kpi-label">Source Systems Integrated</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">147</div>
+        <div class="kpi-label">Datasphere Objects</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">42</div>
+        <div class="kpi-label">Week Project Duration</div>
+      </div>
+    </div>
+
+    <p>Project Helix encompasses the full lifecycle from requirements gathering through production deployment, covering six comprehensive use cases that collectively address the most critical analytics gaps identified during the discovery phase:</p>
+
+    <ul>
+      <li><strong>Order-to-Cash Analytics</strong> — Unified view of order processing, fulfillment, invoicing, and accounts receivable across all business units and distribution channels</li>
+      <li><strong>Supply Chain Demand Planning</strong> — Integration of historical demand signals, forecast data from SAP IBP, and inventory positions to enable responsive supply chain decision-making</li>
+      <li><strong>Manufacturing Performance</strong> — Real-time and historical analysis of production efficiency, quality metrics, downtime drivers, and capacity utilization across all manufacturing facilities</li>
+      <li><strong>Product Costing and Margin Analysis</strong> — Granular cost decomposition from raw materials through finished goods, enabling product-level and customer-level profitability analysis</li>
+      <li><strong>Customer 360 and Sales Analytics</strong> — Comprehensive customer profiling, order behavior analysis, and sales performance tracking across all channels and geographies</li>
+      <li><strong>Financial Consolidation and Reporting</strong> — Automated financial data aggregation, intercompany elimination support, and multi-dimensional financial reporting aligned with corporate chart of accounts</li>
+    </ul>
+
+    <h2 class="subsection-title">Key Outcomes</h2>
+    <p>The successful implementation of SAP Datasphere will deliver the following measurable outcomes to Greenheck:</p>
+
+    <p class="table-caption">Table 1.3 — Expected Business Outcomes</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Outcome Category</th>
+          <th>Current State</th>
+          <th>Target State</th>
+          <th>Improvement</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Report Generation Time</td><td>4–8 hours (manual)</td><td>Real-time / on-demand</td><td>95%+ reduction</td></tr>
+        <tr><td>Data Reconciliation Effort</td><td>120+ person-hours/month</td><td>&lt;10 person-hours/month</td><td>92% reduction</td></tr>
+        <tr><td>Single Source of Truth Coverage</td><td>35% of business metrics</td><td>90% of business metrics</td><td>2.6x increase</td></tr>
+        <tr><td>Cross-Functional Analytics</td><td>Not feasible</td><td>Fully enabled</td><td>New capability</td></tr>
+        <tr><td>Data Latency (Operational)</td><td>24–48 hours</td><td>&lt;15 minutes (near real-time)</td><td>99% reduction</td></tr>
+        <tr><td>Ad-Hoc Analysis Capability</td><td>IT-dependent (2–5 day SLA)</td><td>Self-service via SAP Analytics Cloud</td><td>Same-day delivery</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="subsection-title">Investment Summary</h2>
+    <p>The total project investment, including SAP Datasphere licensing, professional services, internal labor allocation, and infrastructure components, is structured as follows:</p>
+
+    <p class="table-caption">Table 1.4 — Investment Summary (Abbreviated)</p>
+    <table>
+      <thead>
+        <tr><th>Category</th><th>Year 1</th><th>Year 2</th><th>Year 3</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>SAP Datasphere Licensing</td><td>[Redacted]</td><td>[Redacted]</td><td>[Redacted]</td></tr>
+        <tr><td>Professional Services</td><td>[Redacted]</td><td>[Redacted]</td><td>—</td></tr>
+        <tr><td>Internal Labor</td><td>[Redacted]</td><td>[Redacted]</td><td>[Redacted]</td></tr>
+        <tr><td>Training and Change Management</td><td>[Redacted]</td><td>[Redacted]</td><td>[Redacted]</td></tr>
+        <tr><td>Infrastructure / Connectivity</td><td>[Redacted]</td><td>[Redacted]</td><td>[Redacted]</td></tr>
+        <tr><td><strong>Total</strong></td><td><strong>[Redacted]</strong></td><td><strong>[Redacted]</strong></td><td><strong>[Redacted]</strong></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout success">
+      <div class="callout-title"><i class="fas fa-check-circle"></i> Executive Approval</div>
+      <p>This project has been approved by the Greencheck Executive Steering Committee on [redacted date] with a total authorized budget as outlined above. The project is sponsored by the VP of Information Technology and governed by the Enterprise Data Governance Council.</p>
+    </div>
+
+    <div class="page-footer">
+      <span>Confidential — Greenheck SAP Datasphere Implementation</span>
+      <span>Page 5</span>
+    </div>
+  </div>
+
+  <!-- ======================== SECTION 2: PROJECT OVERVIEW ======================== -->
+  <div class="page-content">
+    <div class="page-header">
+      <span>Greenheck — SAP Datasphere Implementation</span>
+      <span>GH-SDS-IMP-2024-001</span>
+    </div>
+
+    <div class="section-number">Section 2</div>
+    <h1 class="section-title">Project Overview and Scope</h1>
+
+    <h2 class="subsection-title">2.1 Background and Business Drivers</h2>
+
+    <p>Greenheck's evolution from a single-facility ventilation manufacturer to a global, multi-product-line enterprise has created significant data management challenges. The company's data landscape has grown organically over two decades, resulting in architectural complexity that impedes operational efficiency and strategic decision-making.</p>
+
+    <h3 class="sub-subsection-title">2.1.1 Business Driver Analysis</h3>
+
+    <p class="table-caption">Table 2.1 — Business Drivers and Impact Assessment</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Driver ID</th>
+          <th>Business Driver</th>
+          <th>Description</th>
+          <th>Impact</th>
+          <th>Urgency</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>BD-01</td><td>SAP S/4HANA Migration</td><td>Greenheck is migrating from SAP ECC to S/4HANA; existing BW/4HANA requires realignment</td><td>Critical</td><td>High</td></tr>
+        <tr><td>BD-02</td><td>Acquisition Integration</td><td>Recent acquisitions have introduced disparate ERP and data systems requiring consolidation</td><td>Critical</td><td>High</td></tr>
+        <tr><td>BD-03</td><td>Regulatory Reporting</td><td>Evolving ESG reporting requirements demand auditable, traceable data pipelines</td><td>High</td><td>Medium</td></tr>
+        <tr><td>BD-04</td><td>Self-Service Analytics Demand</td><td>Business users require self-service capability; IT backlog for reports exceeds 200 requests</td><td>High</td><td>High</td></tr>
+        <tr><td>BD-05</td><td>Real-Time Operations</td><td>Manufacturing and supply chain require near real-time visibility for agile response</td><td>High</td><td>Medium</td></tr>
+        <tr><td>BD-06</td><td>Data Governance Mandate</td><td>Board-level directive to establish enterprise data governance with clear ownership</td><td>Medium</td><td>High</td></tr>
+        <tr><td>BD-07</td><td>Cost Reduction</td><td>Annual spend on legacy data infrastructure maintenance exceeds value delivered</td><td>Medium</td><td>Medium</td></tr>
+        <tr><td>BD-08</td><td>Talent Retention</td><td>Data team attrition driven by frustration with legacy tooling and manual processes</td><td>Medium</td><td>Low</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="sub-subsection-title">2.1.2 Strategic Alignment</h3>
+    <p>Project Helix directly supports the following elements of Greenheck's three-year strategic plan:</p>
+    <ul>
+      <li><strong>Strategic Pillar 1 — Operational Excellence:</strong> Provide real-time visibility into manufacturing and supply chain performance to enable continuous improvement</li>
+      <li><strong>Strategic Pillar 2 — Customer Centricity:</strong> Deliver a 360-degree customer view that enables personalized engagement and proactive service</li>
+      <li><strong>Strategic Pillar 3 — Informed Decision-Making:</strong> Replace intuition-based decisions with data-driven insights accessible to all decision-makers</li>
+      <li><strong>Strategic Pillar 4 — Scalable Infrastructure:</strong> Build a cloud-native data platform that scales with Greenheck's growth trajectory without proportional cost increase</li>
+    </ul>
+
+    <h2 class="subsection-title">2.2 Project Objectives</h2>
+
+    <p class="table-caption">Table 2.2 — SMART Project Objectives</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Obj ID</th>
+          <th>Objective</th>
+          <th>Success Measure</th>
+          <th>Target</th>
+          <th>Timeline</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>OBJ-01</td><td>Deploy SAP Datasphere as the enterprise data warehouse</td><td>Platform provisioning and configuration complete</td><td>100% completion</td><td>Week 6</td></tr>
+        <tr><td>OBJ-02</td><td>Integrate all Tier-1 source systems</td><td>Number of active data flows in production</td><td>23 data flows</td><td>Week 24</td></tr>
+        <tr><td>OBJ-03</td><td>Deliver six end-to-end analytics use cases</td><td>Use cases validated and signed off by business</td><td>6/6 use cases</td><td>Week 32</td></tr>
+        <tr><td>OBJ-04</td><td>Establish single source of truth for core metrics</td><td>Metric reconciliation rate</td><td>&gt;95% alignment</td><td>Week 36</td></tr>
+        <tr><td>OBJ-05</td><td>Enable self-service analytics via SAP Analytics Cloud</td><td>Active self-service users</td><td>&gt;150 users</td><td>Week 40</td></tr>
+        <tr><td>OBJ-06</td><td>Decommission legacy data marts</td><td>Number of systems decommissioned</td><td>12 of 15 systems</td><td>Week 48</td></tr>
+        <tr><td>OBJ-07</td><td>Achieve data latency &lt;15 minutes for operational use cases</td><td>Maximum data freshness lag</td><td>&lt;15 minutes</td><td>Week 38</td></tr>
+        <tr><td>OBJ-08</td><td>Implement row-level security aligned to data governance policy</td><td>Security coverage of all published models</td><td>100% coverage</td><td>Week 30</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="subsection-title">2.3 Scope Definition</h2>
+
+    <h3 class="sub-subsection-title">2.3.1 In-Scope Source Systems</h3>
+
+    <p class="table-caption">Table 2.3 — Source Systems in Scope</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Tier</th>
+          <th>System</th>
+          <th>Type</th>
+          <th>Integration Method</th>
+          <th>Data Volume (Daily)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Tier 1</td><td>SAP S/4HANA (ECC migration target)</td><td>ERP</td><td>SAP CDC / OData</td><td>2.4M records</td></tr>
+        <tr><td>Tier 1</td><td>SAP IBP</td><td>Planning</td><td>OData API</td><td>850K records</td></tr>
+        <tr><td>Tier 1</td><td>SAP SuccessFactors</td><td>HR</td><td>SAP CDC</td><td>45K records</td></tr>
+        <tr><td>Tier 1</td><td>Salesforce CRM</td><td>CRM</td><td>REST API + Data Provisioning Agent</td><td>320K records</td></tr>
+        <tr><td>Tier 1</td><td>Manufacturing MES (Aveva)</td><td>MES</td><td>ODBC via Data Provisioning Agent</td><td>5.8M records</td></tr>
+        <tr><td>Tier 2</td><td>Legacy SAP BW/4HANA</td><td>Data Warehouse</td><td>Open ODS / BW Bridge</td><td>1.2M records</td></tr>
+        <tr><td>Tier 2</td><td>SQL Server — Finance Mart</td><td>Data Mart</td><td>ODBC via Data Provisioning Agent</td><td>400K records</td></tr>
+        <tr><td>Tier 2</td><td>SQL Server — Sales Mart</td><td>Data Mart</td><td>ODBC via Data Provisioning Agent</td><td>280K records</td></tr>
+        <tr><td>Tier 2</td><td>Oracle — Supply Chain</td><td>ERP (Acquired Entity)</td><td>ODBC via Data Provisioning Agent</td><td>620K records</td></tr>
+        <tr><td>Tier 2</td><td>Azure Data Lake — Raw Files</td><td>Data Lake</td><td>S3-compatible / Object Store</td><td>15GB daily</td></tr>
+        <tr><td>Tier 3</td><td>Shoplogix (OEE)</td><td>IIoT</td><td>REST API</td><td>3.2M records</td></tr>
+        <tr><td>Tier 3</td><td>NetSuite (Subsidiary)</td><td>ERP</td><td>REST API / SOAP</td><td>95K records</td></tr>
+        <tr><td>Tier 3</td><td>Greenheck.com CMS Analytics</td><td>Web Analytics</td><td>Flat file (SFTP)</td><td>1.5M records</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="subsection-title">2.4 Out of Scope</h2>
+    <p>The following items are explicitly excluded from the current project phase and will be addressed in subsequent phases:</p>
+    <ul class="x-list">
+      <li>SAP Analytics Cloud dashboard development (separate workstream; Phase 2)</li>
+      <li>Machine learning model development and MLOps pipeline</li>
+      <li>Real-time streaming analytics (e.g., Kafka/SAP Event Mesh integration)</li>
+      <li>Data marketplace / data product catalog for external data sharing</li>
+      <li>Master data management (MDM) implementation (separate initiative)</li>
+      <li>SAP BTP Kyma runtime and serverless extensions</li>
+      <li>Legacy SAP BW/4HANA complete decommission (partial bridge only in Phase 1)</li>
+      <li>Mobile-specific analytics consumption layer</li>
+    </ul>
+
+    <div class="page-footer">
+      <span>Confidential — Greenheck SAP Datasphere Implementation</span>
+      <span>Page 8</span>
+    </div>
+  </div>
+
+  <!-- ======================== SECTION 3: CURRENT STATE ======================== -->
+  <div class="page-content">
+    <div class="page-header">
+      <span>Greenheck — SAP Datasphere Implementation</span>
+      <span>GH-SDS-IMP-2024-001</span>
+    </div>
+
+    <div class="section-number">Section 3</div>
+    <h1 class="section-title">Current State Assessment</h1>
+
+    <h2 class="subsection-title">3.1 Existing Data Landscape</h2>
+
+    <p>Greenheck's current data architecture has evolved over approximately 18 years and reflects the organic growth pattern typical of mid-market manufacturers. The landscape is characterized by a central SAP BW system that was initially deployed in 2006, supplemented by numerous departmental data marts built in response to gaps in BW coverage or performance limitations.</p>
+
+    <div class="arch-diagram">
+╔══════════════════════════════════════════════════════════════════════════╗
+║              GREENHECK — CURRENT STATE DATA LANDSCAPE                    ║
+╠══════════════════════════════════════════════════════════════════════════╣
+║                                                                         ║
+║  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐               ║
+║  │ SAP ECC   │  │ SAP IBP  │  │SuccessFrs│  │Salesforce│               ║
+║  │ (ERP)     │  │(Planning)│  │  (HR)    │  │  (CRM)   │               ║
+║  └─────┬─────┘  └─────┬────┘  └─────┬────┘  └─────┬────┘               ║
+║        │              │              │              │                     ║
+║        ▼              │              │              │                     ║
+║  ┌──────────┐         │              │              │                     ║
+║  │SAP BW/   │◀────────┘              │              │                     ║
+║  │4HANA     │◀───────────────────────┘              │                     ║
+║  │(Central) │◀──────────────────────────────────────┘                     ║
+║  └──┬───┬───┘                                                          ║
+║     │   │                                                               ║
+║     │   │    ┌─────────────────────────────────────────────┐            ║
+║     │   └───▶│          DEPARTMENTAL DATA MARTS             │            ║
+║     │        ├──────────┬──────────┬──────────┬────────────┤            ║
+║     │        │SQL Server│SQL Server│Oracle DB │Excel/      │            ║
+║     │        │Finance   │Sales     │Supply    │Access      │            ║
+║     │        │Mart      │Mart      │Chain     │Spreadsheets│            ║
+║     │        └────┬─────┴────┬─────┴────┬─────┴─────┬──────┘            ║
+║     │             │          │          │           │                    ║
+║     │             ▼          ▼          ▼           ▼                    ║
+║     │        ┌──────────────────────────────────────────┐               ║
+║     │        │     FRAGMENTED REPORTING LAYER            │               ║
+║     │        │  Crystal Reports / WebI / Excel /         │               ║
+║     │        │  Power BI (unofficial) / Custom SQL       │               ║
+║     │        └──────────────────────────────────────────┘               ║
+║     │                                                                    ║
+║  ┌──┴─────────────────────────────────────────────────────────────┐     ║
+║  │                    CONSUMERS                                     │     ║
+║  │  Finance (35) │ Operations (28) │ Sales (22) │ Exec (12) │ Other │     ║
+║  └────────────────────────────────────────────────────────────────┘     ║
+╚══════════════════════════════════════════════════════════════════════════╝
+    </div>
+
+    <h2 class="subsection-title">3.2 Pain Points and Gaps</h2>
+
+    <p class="table-caption">Table 3.1 — Current State Pain Point Assessment</p>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Pain Point</th>
+          <th>Affected Area</th>
+          <th>Severity</th>
+          <th>Business Impact</th>
+          <th>Root Cause</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>PP-01</td><td>No single source of truth for revenue</td><td>Finance, Sales</td><td>Critical</td><td>$[Redacted] annual impact from pricing discrepancies</td><td>Multiple revenue definitions across marts</td></tr>
+        <tr><td>PP-02</td><td>Manual data reconciliation required for month-end close</td><td>Finance</td><td>Critical</td><td>5-day close extension; 3 FTEs dedicated</td><td>No unified financial data model</td></tr>
+        <tr><td>PP-03</td><td>Demand forecast vs. actual comparison requires 3 systems</td><td>Supply Chain</td><td>High</td><td>Excess inventory carrying cost $[Redacted]</td><td>IBP, BW, and Excel not integrated</td></tr>
+        <tr><td>PP-04</td><td>Manufacturing OEE data not linked to financial outcomes</td><td>Operations</td><td>High</td><td>Unable to quantify improvement ROI</td><td>MES and ERP data in separate systems</td></tr>
+        <tr><td>PP-05</td><td>Customer profitability analysis impossible at order level</td><td>Sales, Finance</td><td>High</td><td>Unprofitable accounts not identified</td><td>Cost-to-serve data not integrated with orders</td></tr>
+        <tr><td>PP-06</td><td>Report delivery SLA consistently missed (2–5 day backlog)</td><td>All</td><td>Medium</td><td>Delayed decisions; user frustration</td><td>IT-dependent report development model</td></tr>
+        <tr><td>PP-07</td><td>Data security inconsistent across systems</td><td>All</td><td>High</td><td>Compliance risk; potential data exposure</td><td>No centralized security model</td></tr>
+        <tr><td>PP-08</td><td>Greenheck.com web analytics isolated from CRM and ERP</td><td>Marketing, Sales</td><td>Medium</td><td>Inability to measure digital channel ROI</td><td>No integration between web analytics and CRM</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="subsection-title">3.3 Data Quality Baseline</h2>
+    <p>A comprehensive data quality assessment was conducted across all Tier-1 source systems during the discovery phase. The following table summarizes the baseline quality metrics for key data domains:</p>
+
+    <p class="table-caption">Table 3.2 — Data Quality Baseline by Domain</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Data Domain</th>
+          <th>Completeness</th>
+          <th>Accuracy</th>
+          <th>Consistency</th>
+          <th>Timeliness</th>
+          <th>Overall Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Customer Master</td><td>94%</td><td>91%</td><td>72%</td><td>98%</td><td>89%</td></tr>
+        <tr><td>Material Master</td><td>88%</td><td>85%</td><td>68%</td><td>95%</td><td>84%</td></tr>
+        <tr><td>Sales Orders</td><td>99%</td><td>97%</td><td>82%</td><td>100%</td><td>95%</td></tr>
+        <tr><td>Production Orders</td><td>96%</td><td>89%</td><td>74%</td><td>92%</td><td>88%</td></tr>
+        <tr><td>Financial Transactions</td><td>99%</td><td>99%</td><td>78%</td><td>100%</td><td>94%</td></tr>
+        <tr><td>Inventory Movements</td><td>93%</td><td>86%</td><td>65%</td><td>88%</td><td>83%</td></tr>
+        <tr><td>Demand Forecasts</td><td>100%</td><td>N/A</td><td>55%</td><td>90%</td><td>82%</td></tr>
+        <tr><td>Costing Data</td><td>91%</td><td>88%</td><td>70%</td><td>85%</td><td>84%</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <div class="callout-title"><i class="fas fa-info-circle"></i> Data Quality Remediation</div>
+      <p>Consistency scores are the primary concern, averaging only 72% across domains. This is expected given the fragmented system landscape. The Datasphere implementation includes data quality rules within Data Flows to enforce consistency at the integration layer. A parallel MDM initiative (out of scope for this project) will address root-cause master data quality issues.</p>
+    </div>
+
+    <div class="page-footer">
+      <span>Confidential — Greenheck SAP Datasphere Implementation</span>
+      <span>Page 11</span>
+    </div>
+  </div>
+
+  <!-- ======================== SECTION 4: TARGET STATE ARCHITECTURE ======================== -->
+  <div class="page-content">
+    <div class="page-header">
+      <span>Greenheck — SAP Datasphere Implementation</span>
+      <span>GH-SDS-IMP-2024-001</span>
+    </div>
+
+    <div class="section-number">Section 4</div>
+    <h1 class="section-title">Target State Architecture</h1>
+
+    <h2 class="subsection-title">4.1 Enterprise Architecture Overview</h2>
+
+    <p>The target state architecture positions SAP Datasphere as the central, authoritative data platform within Greenheck's enterprise architecture. All analytical data flows converge into Datasphere, where they are harmonized, governed, and exposed through a business-semantic layer to downstream consumption tools.</p>
+
+    <div class="arch-diagram">
+╔══════════════════════════════════════════════════════════════════════════════╗
+║           GREENHECK — TARGET STATE ENTERPRISE DATA ARCHITECTURE               ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  ┌──────────────────────────────── SOURCE LAYER ─────────────────────────┐  ║
+║  │                                                                        │  ║
+║  │  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐  │  ║
+║  │  │S/4HANA │ │SAP IBP │ │SF HCM  │ │Salesfrc│ │ Aveva  │ │Oracle  │  │  ║
+║  │  │  ERP   │ │Planning│ │  HR    │ │  CRM   │ │  MES   │ │  ERP   │  │  ║
+║  │  └───┬────┘ └───┬────┘ └───┬────┘ └───┬────┘ └───┬────┘ └───┬────┘  │  ║
+║  │      │          │          │          │          │          │         │  ║
+║  │  ┌───┴────┐ ┌───┴────┐                                              │  ║
+║  │  │Legacy  │ │NetSuite│ ┌────────┐ ┌────────┐                         │  ║
+║  │  │BW/4HANA│ │Subsidi │ │Shoplogx│ │ADL Raw │                         │  ║
+║  │  └───┬────┘ └───┬────┘ │OEE/IIoT│ │ Files  │                         │  ║
+║  │      │          │      └───┬────┘ └───┬────┘                         │  ║
+║  └──────┼──────────┼──────────┼──────────┼───────────────────────────────┘  ║
+║         │          │          │          │                                   ║
+║  ═══════╪══════════╪══════════╪══════════╪══════ INTEGRATION LAYER ═══════  ║
+║         │          │          │          │                                   ║
+║         ▼          ▼          ▼          ▼                                   ║
+║  ┌─────────────────────────────────────────────────────────────────────┐   ║
+║  │                    SAP DATASPHERE                                    │   ║
+║  │  ┌──────────────────────────────────────────────────────────────┐   │   ║
+║  │  │  DATA INGESTION                                              │   │   ║
+║  │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────────┐  │   │   ║
+║  │  │  │SAP CDC   │  │OData     │  │Data Prov.│  │File/SFTP   │  │   │   ║
+║  │  │  │Connector │  │Adapter   │  │Agent     │  │Ingestion   │  │   │   ║
+║  │  │  └──────────┘  └──────────┘  └──────────┘  └────────────┘  │   │   ║
+║  │  └──────────────────────────────────────────────────────────────┘   │   ║
+║  │  ┌──────────────────────────────────────────────────────────────┐   │   ║
+║  │  │  DATA STORAGE                                                 │   │   ║
+║  │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────────┐  │   │   ║
+║  │  │  │Raw/Stage │  │Business  │  │Analytical│  │Local Tables│  │   │   ║
+║  │  │  │Tables    │  │Entities  │  │Dataset   │  │(Staging)   │  │   │   ║
+║  │  │  └──────────┘  └──────────┘  └──────────┘  └────────────┘  │   │   ║
+║  │  └──────────────────────────────────────────────────────────────┘   │   ║
+║  │  ┌──────────────────────────────────────────────────────────────┐   │   ║
+║  │  │  SEMANTIC LAYER                                               │   │   ║
+║  │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────────┐  │   │   ║
+║  │  │  │Graphical │  │SQL Views │  │Analytcl  │  │Data Labels │  │   │   ║
+║  │  │  │Views     │  │          │  │Model     │  │& Business  │  │   │   ║
+║  │  │  └──────────┘  └──────────┘  └──────────┘  │Glossary    │  │   │   ║
+║  │  │                                              └────────────┘  │   │   ║
+║  │  └──────────────────────────────────────────────────────────────┘   │   ║
+║  │  ┌──────────────────────────────────────────────────────────────┐   │   ║
+║  │  │  GOVERNANCE & SECURITY                                        │   │   ║
+║  │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────────┐  │   │   ║
+║  │  │  │Row-Level │  │Data      │  │Workflow  │  │Audit       │  │   │   ║
+║  │  │  │Security  │  │Classification│Approval │  │Logging     │  │   │   ║
+║  │  │  └──────────┘  └──────────┘  └──────────┘  └────────────┘  │   │   ║
+║  │  └──────────────────────────────────────────────────────────────┘   │   ║
+║  └─────────────────────────────────────────────────────────────────────┘   ║
+║         │          │          │                                           ║
+║  ═══════╪══════════╪══════════╪════════ CONSUMPTION LAYER ════════════     ║
+║         │          │          │                                           ║
+║         ▼          ▼          ▼                                           ║
+║  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐              ║
+║  │SAP Analytics│ │SAP Build   │ │Custom APIs │ │Third-Party │              ║
+║  │Cloud (SAC) │ │Process App │ │(OData v4)  │ │BI Tools    │              ║
+║  └────────────┘ └────────────┘ └────────────┘ └────────────┘              ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+    </div>
+
+    <h2 class="subsection-title">4.2 SAP Datasphere Architecture</h2>
+
+    <p>The Datasphere tenant is provisioned in the AWS us-east-1 region, aligned with Greenheck's primary SAP BTP landscape. The architecture follows a medallion (lakehouse) pattern adapted for Datasphere's native object model.</p>
+
+    <h3 class="sub-subsection-title">4.2.1 Space Architecture</h3>
+
+    <p class="table-caption">Table 4.1 — Datasphere Space Design</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Space Name</th>
+          <th>Space ID</th>
+          <th>Purpose</th>
+          <th>Owner</th>
+          <th>Objects</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>_ADMIN</td><td>GH_ADMIN</td><td>Central administration, cross-space templates, shared utilities</td><td>Data Platform Team</td><td>12</td></tr>
+        <tr><td>_STAGING</td><td>GH_STG</td><td>Landing zone for all ingested data; raw or minimal transformation</td><td>Data Engineering</td><td>28</td></tr>
+        <tr><td>_RAW_VAULT</td><td>GH_RV</td><td>Raw Vault (hub, link, satellite) — system-of-record persistence</td><td>Data Engineering</td><td>42</td></tr>
+        <tr><td>BUSINESS_CORE</td><td>GH_BC</td><td>Business-level entities: harmonized master data, business keys</td><td>Data Architecture</td><td>25</td></tr>
+        <tr><td>ANALYTICS_O2C</td><td>GH_A_O2C</td><td>Order-to-Cash analytical dataset and model</td><td>Finance Analytics</td><td>11</td></tr>
+        <tr><td>ANALYTICS_SUPPLY</td><td>GH_A_SC</td><td>Supply chain and demand planning analytical model</td><td>Supply Chain Analytics</td><td>9</td></tr>
+        <tr><td>ANALYTICS_MFG</td><td>GH_A_MFG</td><td>Manufacturing performance analytical model</td><td>Operations Analytics</td><td>8</td></tr>
+        <tr><td>ANALYTICS_COSTING</td><td>GH_A_COST</td><td>Product costing and margin analytical model</td><td>Finance Analytics</td><td>7</td></tr>
+        <tr><td>ANALYTICS_CUST360</td><td>GH_A_C360</td><td>Customer 360 and sales analytics model</td><td>Sales Analytics</td><td>8</td></tr>
+        <tr><td>ANALYTICS_FINCONS</td><td>GH_A_FC</td><td>Financial consolidation and reporting model</td><td>Finance Analytics</td><td>6</td></tr>
+        <tr><td>_QUALITY</td><td>GH_DQ</td><td>Data quality rules, monitoring, exception tracking</td><td>Data Governance</td><td>8</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="sub-subsection-title">4.2.2 Data Flow Architecture Pattern</h3>
+
+    <p>Each source system follows a standardized data flow pattern through the Datasphere spaces:</p>
+
+    <div class="flow-container">
+      <div class="flow-box">Source System</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">_STAGING<br><small>(Landing Tables)</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">_RAW_VAULT<br><small>(Hubs/Links/Sats)</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">BUSINESS_CORE<br><small>(Business Entities)</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box accent">ANALYTICS_*</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">Consumer</div>
+    </div>
+
+    <p>This pattern ensures clear separation of concerns, auditability at each transformation stage, and the ability to re-process data from any layer without re-ingesting from source systems.</p>
+
+    <div class="page-footer">
+      <span>Confidential — Greenheck SAP Datasphere Implementation</span>
+      <span>Page 15</span>
+    </div>
+  </div>
+
+  <!-- ======================== SECTION 4 CONTINUED: INTEGRATION ARCH ======================== -->
+  <div class="page-content">
+    <div class="page-header">
+      <span>Greenheck — SAP Datasphere Implementation</span>
+      <span>GH-SDS-IMP-2024-001</span>
+    </div>
+
+    <h2 class="subsection-title">4.3 Integration Architecture</h2>
+
+    <h3 class="sub-subsection-title">4.3.1 Connectivity Components</h3>
+
+    <p class="table-caption">Table 4.2 — Integration Connectivity Matrix</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Source System</th>
+          <th>Connection Type</th>
+          <th>Datasphere Connector</th>
+          <th>Protocol</th>
+          <th>Auth Method</th>
+          <th>Deployment</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>SAP S/4HANA</td><td>Native</td><td>SAP CDC (Change Data Capture)</td><td>RFC/ODP</td><td>Principal Propagation</td><td>BTP Managed</td></tr>
+        <tr><td>SAP IBP</td><td>Native</td><td>OData Adapter</td><td>OData v2/v4</td><td>OAuth 2.0</td><td>BTP Managed</td></tr>
+        <tr><td>SAP SuccessFactors</td><td>Native</td><td>SAP CDC</td><td>OData v2</td><td>OAuth 2.0 (SAML)</td><td>BTP Managed</td></tr>
+        <tr><td>Salesforce CRM</td><td>Remote</td><td>Data Provisioning Agent</td><td>REST API + JDBC</td><td>OAuth 2.0 (JWT)</td><td>On-Prem Agent</td></tr>
+        <tr><td>Aveva MES</td><td>Remote</td><td>Data Provisioning Agent</td><td>ODBC/JDBC</td><td>SQL Auth + TLS</td><td>On-Prem Agent</td></tr>
+        <tr><td>Legacy BW/4HANA</td><td>Native</td><td>BW Bridge / Open ODS</td><td>RFC/ODP</td><td>Principal Propagation</td><td>BTP Managed</td></tr>
+        <tr><td>SQL Server Marts</td><td>Remote</td><td>Data Provisioning Agent</td><td>ODBC/JDBC</td><td>SQL Auth + TLS</td><td>On-Prem Agent</td></tr>
+        <tr><td>Oracle ERP</td><td>Remote</td><td>Data Provisioning Agent</td><td>ODBC/JDBC</td><td>Oracle Auth + TLS</td><td>On-Prem Agent</td></tr>
+        <tr><td>Azure Data Lake</td><td>Native</td><td>Object Store Connection</td><td>S3-compatible API</td><td>SAS Token</td><td>BTP Managed</td></tr>
+        <tr><td>Shoplogix OEE</td><td>Remote</td><td>Data Provisioning Agent</td><td>REST API</td><td>API Key + TLS</td><td>On-Prem Agent</td></tr>
+        <tr><td>NetSuite</td><td>Remote</td><td>Data Provisioning Agent</td><td>REST/SOAP API</td><td>Token-Based Auth</td><td>On-Prem Agent</td></tr>
+        <tr><td>Web Analytics Files</td><td>Remote</td><td>SFTP File Import</td><td>SFTP</td><td>SSH Key</td><td>BTP Managed</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="sub-subsection-title">4.3.2 Data Provisioning Agent Architecture</h3>
+
+    <p>The Data Provisioning Agent (DPA) is deployed as a high-availability cluster within Greenheck's on-premises data center to provide secure connectivity to non-SAP source systems. The agent is installed on a dedicated virtual machine cluster with the following specifications:</p>
+
+    <p class="table-caption">Table 4.3 — Data Provisioning Agent Infrastructure</p>
+    <table>
+      <thead>
+        <tr><th>Parameter</th><th>Specification</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Number of Agent Nodes</td><td>3 (Active-Active with load balancing)</td></tr>
+        <tr><td>vCPU per Node</td><td>8 vCPU</td></tr>
+        <tr><td>RAM per Node</td><td>32 GB</td></tr>
+        <tr><td>OS</td><td>SUSE Linux Enterprise Server 15 SP5</td></tr>
+        <tr><td>Agent Version</td><td>SAP DPA 2.4 (latest stable)</td></tr>
+        <tr><td>Network</td><td>Dedicated VLAN, outbound HTTPS/443 only to BTP</td></tr>
+        <tr><td>Load Balancer</td><td>HAProxy (active within DMZ)</td></tr>
+        <tr><td>Monitoring</td><td>Integrated with Datasphere Monitoring + Datadog agent</td></tr>
+        <tr><td>Backup</td><td>Agent configuration backed up daily; restore &lt;30 min</td></tr>
+        <tr><td>Patch Cadence</td><td>Monthly alignment with SAP patch releases</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="subsection-title">4.4 Network and Connectivity</h2>
+
+    <p>Network connectivity between Greenheck's on-premises infrastructure and SAP Datasphere is established through a dedicated SAP BTP Cloud Connector deployment, providing a secure reverse-invoke tunnel without requiring inbound firewall ports.</p>
+
+    <div class="arch-diagram">
+┌─────────────────────────────────┐          ┌─────────────────────────────────┐
+│     GREENHECK ON-PREMISE        │          │     SAP BTP / DATASPHERE        │
+│                                 │          │                                 │
+│  ┌─────────┐    ┌──────────┐   │  HTTPS   │  ┌─────────────────────────┐    │
+│  │ Source   │────│ DPA      │───┼─────────▶│  │ Datasphere Tenant      │    │
+│  │ Systems  │    │ Cluster  │   │  (443)   │  │ (AWS us-east-1)        │    │
+│  └─────────┘    │ (HAProxy)│   │          │  └─────────────────────────┘    │
+│                 └────┬─────┘   │          │                                 │
+│                      │         │          │  ┌─────────────────────────┐    │
+│                 ┌────▼─────┐   │          │  │ SAP Cloud Connector     │    │
+│                 │ SAP Cloud│   │          │  │ (Reverse Invoke)        │    │
+│                 │Connector │───┼─────────▶│  └──────────┬──────────────┘    │
+│                 └──────────┘   │  WSS     │             │                   │
+│                                 │  (443)   │             ▼                   │
+│  ┌─────────┐                    │          │  ┌─────────────────────────┐    │
+│  │ Firewall │◀──────────────────┼──────────┼──│ Subaccount              │    │
+│  │ (Egress  │   Outbound only   │          │  │ (Landscape: PROD)       │    │
+│  │  443)    │                   │          │  └─────────────────────────┘    │
+│  └─────────┘                    │          │                                 │
+└─────────────────────────────────┘          └─────────────────────────────────┘
+
+  Security Controls:
+  ├── Mutual TLS (mTLS) for all connections
+  ├── Certificate-based authentication (no passwords)
+  ├── IP whitelisting on BTP subaccount level
+  ├── Network segmentation (DPA on dedicated VLAN)
+  ├── All traffic encrypted in transit (TLS 1.3)
+  └── No direct internet access from DPA nodes
+    </div>
+
+    <div class="page-footer">
+      <span>Confidential — Greenheck SAP Datasphere Implementation</span>
+      <span>Page 17</span>
+    </div>
+  </div>
+
+  <!-- ======================== SECTION 5: DATA MODEL ======================== -->
+  <div class="page-content">
+    <div class="page-header">
+      <span>Greenheck — SAP Datasphere Implementation</span>
+      <span>GH-SDS-IMP-2024-001</span>
+    </div>
+
+    <div class="section-number">Section 5</div>
+    <h1 class="section-title">Data Model Design</h1>
+
+    <h2 class="subsection-title">5.1 Conceptual Data Model</h2>
+
+    <p>The conceptual data model is organized around the core business entities that span all six use cases. This model serves as the foundation for the logical and physical implementations and has been validated with business stakeholders across finance, operations, supply chain, and sales.</p>
+
+    <div class="arch-diagram">
+╔══════════════════════════════════════════════════════════════════════════╗
+║              GREENHECK — CONCEPTUAL DATA MODEL                             ║
+╠══════════════════════════════════════════════════════════════════════════╣
+║                                                                          ║
+║                    ┌──────────────┐                                      ║
+║                    │   CUSTOMER   │                                      ║
+║                    │──────────────│                                      ║
+║                    │ CustID       │                                      ║
+║                    │ Name         │                                      ║
+║                    │ Region       │                                      ║
+║                    │ Channel      │                                      ║
+║                    │ Segment      │                                      ║
+║                    └──────┬───────┘                                      ║
+║                           │ 1:N                                         ║
+║                           ▼                                              ║
+║  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐                 ║
+║  │   MATERIAL   │──▶│ SALES ORDER  │──▶│ DELIVERY     │                 ║
+║  │──────────────│   │──────────────│   │──────────────│                 ║
+║  │ MatID        │   │ OrderID      │   │ DelivID      │                 ║
+║  │ Description  │   │ OrderDate    │   │ ShipDate     │                 ║
+║  │ ProductLine  │   │ OrderQty     │   │ ShipQty      │                 ║
+║  │ Category     │   │ OrderValue   │   │ Carrier      │                 ║
+║  └──────┬───────┘   └──────┬───────┘   └──────┬───────┘                 ║
+║         │                  │                  │                          ║
+║         │                  ▼                  │                          ║
+║         │          ┌──────────────┐           │                          ║
+║         │          │   INVOICE    │◀──────────┘                          ║
+║         │          │──────────────│                                      ║
+║         │          │ InvoiceID    │                                      ║
+║         │          │ InvoiceDate  │                                      ║
+║         │          │ InvoiceValue │                                      ║
+║         │          │ PaymentSts   │                                      ║
+║         │          └──────┬───────┘                                      ║
+║         │                 │                                              ║
+║  ┌──────┴───────┐         │         ┌──────────────┐                    ║
+║  │  COSTING     │─────────┼────────▶│  GL ACCOUNT  │                    ║
+║  │──────────────│         │         │──────────────│                    ║
+║  │ MatID        │         │         │ AcctID       │                    ║
+║  │ StdCost      │         │         │ AcctDesc     │                    ║
+║  │ ActCost      │         │         │ CoA Level    │                    ║
+║  │ CostComp     │         │         │ ProfitCenter │                    ║
+║  └──────────────┘         │         └──────┬───────┘                    ║
+║                           │                │                            ║
+║  ┌──────────────┐         │         ┌──────┴───────┐                    ║
+║  │ PRODUCTION   │─────────┼────────▶│FINANCIAL TRX │                    ║
+║  │──────────────│         │         │──────────────│                    ║
+║  │ ProdOrderID  │         │         │ TrxID        │                    ║
+║  │ Material     │         │         │ Amount       │                    ║
+║  │ Facility     │         │         │ Currency     │                    ║
+║  │ QtyGood      │         │         │ FiscalPeriod │                    ║
+║  │ QtyScrap     │         │         │ CompanyCode  │                    ║
+║  └──────┬───────┘         │         └──────────────┘                    ║
+║         │                 │                                              ║
+║         ▼                 │         ┌──────────────┐                    ║
+║  ┌──────────────┐         │         │  DEMAND FCST │                    ║
+║  │   OEE /      │         │         │──────────────│                    ║
+║  │   EQUIPMENT  │         │         │ MatID        │                    ║
+║  │──────────────│         │         │ Period       │                    ║
+║  │ EquipID      │         │         │ ForecastQty  │                    ║
+║  │ Facility     │         │         │ ForecastType │                    ║
+║  │ Availability │         │         │ Confidence   │                    ║
+║  │ Performance  │         │         └──────────────┘                    ║
+║  │ Quality      │         │                                              ║
+║  └──────────────┘         │         ┌──────────────┐                    ║
+║                           │         │  INVENTORY   │                    ║
+║                           │         │──────────────│                    ║
+║                           │         │ MatID        │                    ║
+║                           └────────▶│ Plant        │                    ║
+║                                     │ QtyOnHand    │                    ║
+║                                     │ QtyReserved  │                    ║
+║                                     │ StockType    │                    ║
+║                                     └──────────────┘                    ║
+╚══════════════════════════════════════════════════════════════════════════╝
+    </div>
+
+    <h2 class="subsection-title">5.2 Logical Data Model</h2>
+
+    <p>The logical data model translates the conceptual entities into a detailed attribute-level specification, including data types, business rules, and relationship cardinalities. The model follows the Data Vault 2.0 methodology in the persistence layer and transitions to a dimensional (star schema) model in the analytics layer.</p>
+
+    <h3 class="sub-subsection-title">5.2.1 Core Entity Specifications</h3>
+
+    <p class="table-caption">Table 5.1 — Customer Entity (Logical Specification)</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Logical Name</th>
+          <th>Data Type</th>
+          <th>Length</th>
+          <th>Nullable</th>
+          <th>Business Rule</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>CUST_BK</td><td>Customer Business Key</td><td>VARCHAR</td><td>10</td><td>No</td><td>SAP Customer Number (alpha-numeric)</td></tr>
+        <tr><td>CUST_HASH</td><td>Customer Hash Key</td><td>VARCHAR</td><td>32</td><td>No</td><td>SHA-256 of business key</td></tr>
+        <tr><td>CUST_NAME</td><td>Customer Name</td><td>VARCHAR</td><td>100</td><td>No</td><td>Legal entity name</td></tr>
+        <tr><td>CUST_NAME_2</td><td>Customer Name 2</td><td>VARCHAR</td><td>100</td><td>Yes</td><td>Secondary name line</td></tr>
+        <tr><td>CUST_CITY</td><td>City</td><td>VARCHAR</td><td>40</td><td>No</td><td>Bill-to city</td></tr>
+        <tr><td>CUST_STATE</td><td>State/Province</td><td>VARCHAR</td><td>10</td><td>Yes</td><td>Standard 2-letter code where applicable</td></tr>
+        <tr><td>CUST_COUNTRY</td><td>Country</td><td>VARCHAR</td><td>3</td><td>No</td><td>ISO 3166-1 alpha-3</td></tr>
+        <tr><td>CUST_REGION</td><td>Sales Region</td><td>VARCHAR</td><td>20</td><td>No</td><td>Greenheck sales region mapping</td></tr>
+        <tr><td>CUST_CHANNEL</td><td>Sales Channel</td><td>VARCHAR</td><td>20</td><td>No</td><td>DIRECT | DISTRIBUTOR | OEM | REP</td></tr>
+        <tr><td>CUST_SEGMENT</td><td>Customer Segment</td><td>VARCHAR</td><td>20</td><td>No</td><td>STRATEGIC | GROWTH | MAINTAIN | MONITOR</td></tr>
+        <tr><td>CUST_TIER</td><td>Customer Tier</td><td>INTEGER</td><td>1</td><td>No</td><td>1 (Platinum) through 4 (Standard)</td></tr>
+        <tr><td>CUST_INDUSTRY</td><td>Industry Code</td><td>VARCHAR</td><td>10</td><td>Yes</td><td>NAICS code</td></tr>
+        <tr><td>CUST_CREATED_ON</td><td>Customer Created Date</td><td>DATE</td><td>—</td><td>No</td><td>Original creation date in S/4HANA</td></tr>
+        <tr><td>CUST_STATUS</td><td>Customer Status</td><td>VARCHAR</td><td>10</td><td>No</td><td>ACTIVE | BLOCKED | DELETED</td></tr>
+        <tr><td>CUST_DUNS</td><td>DUNS Number</td><td>VARCHAR</td><td>15</td><td>Yes</td><td>Dun & Bradstreet identifier</td></tr>
+        <tr><td>CUST_TAX_ID</td><td>Tax ID</td><td>VARCHAR</td><td>20</td><td>Yes</td><td>Masked in non-finance spaces</td></tr>
+      </tbody>
+    </table>
+
+    <p class="table-caption">Table 5.2 — Material/Product Entity (Logical Specification)</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Logical Name</th>
+          <th>Data Type</th>
+          <th>Length</th>
+          <th>Nullable</th>
+          <th>Business Rule</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>MAT_BK</td><td>Material Business Key</td><td>VARCHAR</td><td>18</td><td>No</td><td>SAP Material Number (18-char, zero-padded)</td></tr>
+        <tr><td>MAT_HASH</td><td>Material Hash Key</td><td>VARCHAR</td><td>32</td><td>No</td><td>SHA-256 of business key</td></tr>
+        <tr><td>MAT_DESC</td><td>Material Description</td><td>VARCHAR</td><td>40</td><td>No</td><td>Primary product description</td></tr>
+        <tr><td>MAT_DESC_2</td><td>Material Description 2</td><td>VARCHAR</td><td>40</td><td>Yes</td><td>Secondary description line</td></tr>
+        <tr><td>MAT_PRODUCT_LINE</td><td>Product Line</td><td>VARCHAR</td><td>30</td><td>No</td><td>Commercial HVAC | Industrial | Residential | Damper | Kitchen</td></tr>
+        <tr><td>MAT_PRODUCT_FAMILY</td><td>Product Family</td><td>VARCHAR</td><td>30</td><td>No</td><td>Sub-product-line grouping</td></tr>
+        <tr><td>MAT_CATEGORY</td><td>Material Category</td><td>VARCHAR</td><td>10</td><td>No</td><td>FINISHED | RAW | SEMI-FINISHED | PACKAGING | SPARE</td></tr>
+        <tr><td>MAT_UOM</td><td>Base Unit of Measure</td><td>VARCHAR</td><td>3</td><td>No</td><td>EA | M | FT | KG | SET</td></tr>
+        <tr><td>MAT_WEIGHT</td><td>Weight</td><td>DECIMAL</td><td>13,3</td><td>Yes</td><td>Gross weight in base UOM</td></tr>
+        <tr><td>MAT_PLANT</td><td>Primary Manufacturing Plant</td><td>VARCHAR</td><td>4</td><td>No</td><td>Default production facility</td></tr>
+        <tr><td>MAT_STATUS</td><td>Material Status</td><td>VARCHAR</td><td>10</td><td>No</td><td>ACTIVE | DISCONTINUED | DEVELOPMENT</td></tr>
+        <tr><td>MAT_EFF_DATE</td><td>Effective Date</td><td>DATE</td><td>—</td><td>No</td><td>Date material became active</td></tr>
+      </tbody>
+    </table>
+
+    <div class="page-footer">
+      <span>Confidential — Greenheck SAP Datasphere Implementation</span>
+      <span>Page 20</span>
+    </div>
+  </div>
+
+  <!-- ======================== SECTION 5 CONTINUED: PHYSICAL MODEL ======================== -->
+  <div class="page-content">
+    <div class="page-header">
+      <span>Greenheck — SAP Datasphere Implementation</span>
+      <span>GH-SDS-IMP-2024-001</span>
+    </div>
+
+    <h2 class="subsection-title">5.3 Physical Data Model — Datasphere Objects</h2>
+
+    <p>The physical implementation maps logical entities to SAP Datasphere object types. The following table provides a comprehensive inventory of all Datasphere objects deployed across spaces.</p>
+
+    <p class="table-caption">Table 5.3 — Datasphere Object Inventory (Representative Sample)</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Space</th>
+          <th>Object Name</th>
+          <th>Object Type</th>
+          <th>Source</th>
+          <th>Row Count (Est.)</th>
+          <th>Refresh</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>GH_STG</td><td>STG_S4_CUSTOMER</td><td>Table (Replicated)</td><td>S/4HANA CDC</td><td>42,000</td><td>Near RT</td></tr>
+        <tr><td>GH_STG</td><td>STG_S4_MATERIAL</td><td>Table (Replicated)</td><td>S/4HANA CDC</td><td>28,500</td><td>Near RT</td></tr>
+        <tr><td>GH_STG</td><td>STG_S4_SALESORDER_H</td><td>Table (Replicated)</td><td>S/4HANA CDC</td><td>1.8M/yr</td><td>Near RT</td></tr>
+        <tr><td>GH_STG</td><td>STG_S4_SALESORDER_I</td><td>Table (Replicated)</td><td>S/4HANA CDC</td><td>4.2M/yr</td><td>Near RT</td></tr>
+        <tr><td>GH_STG</td><td>STG_S4_DELIVERY</td><td>Table (Replicated)</td><td>S/4HANA CDC</td><td>2.1M/yr</td><td>Near RT</td></tr>
+        <tr><td>GH_STG</td><td>STG_S4_INVOICE</td><td>Table (Replicated)</td><td>S/4HANA CDC</td><td>1.9M/yr</td><td>Near RT</td></tr>
+        <tr><td>GH_STG</td><td>STG_S4_PRODORDER</td><td>Table (Replicated)</td><td>S/4HANA CDC</td><td>850K/yr</td><td>Near RT</td></tr>
+        <tr><td>GH_STG</td><td>STG_S4_GLPOSTING</td><td>Table (Replicated)</td><td>S/4HANA CDC</td><td>5.6M/yr</td><td>Near RT</td></tr>
+        <tr><td>GH_STG</td><td>STG_IBP_DEMAND</td><td>Table (Data Flow)</td><td>IBP OData</td><td>3.2M/yr</td><td>Hourly</td></tr>
+        <tr><td>GH_STG</td><td>STG_SF_EMPLOYEE</td><td>Table (Replicated)</td><td>SF CDC</td><td>8,200</td><td>Daily</td></tr>
+        <tr><td>GH_STG</td><td>STG_SF_ACCOUNT</td><td>Table (Data Flow)</td><td>SF REST</td><td>38,000</td><td>Hourly</td></tr>
+        <tr><td>GH_STG</td><td>STG_SF_OPPORTUNITY</td><td>Table (Data Flow)</td><td>SF REST</td><td>125K/yr</td><td>Hourly</td></tr>
+        <tr><td>GH_STG</td><td>STG_MES_PRODUCTION</td><td>Table (Data Flow)</td><td>Aveva ODBC</td><td>5.8M/yr</td><td>15 min</td></tr>
+        <tr><td>GH_STG</td><td>STG_OEE_EQUIPMENT</td><td>Table (Data Flow)</td><td>Shoplogix API</td><td>3.2M/yr</td><td>15 min</td></tr>
+        <tr><td>GH_RV</td><td>HUB_CUSTOMER</td><td>Table</td><td>STG_S4_CUSTOMER + STG_SF_ACCOUNT</td><td>48,000</td><td>Near RT</td></tr>
+        <tr><td>GH_RV</td><td>HUB_MATERIAL</td><td>Table</td><td>STG_S4_MATERIAL</td><td>28,500</td><td>Near RT</td></tr>
+        <tr><td>GH_RV</td><td>HUB_SALESORDER</td><td>Table</td><td>STG_S4_SALESORDER_H</td><td>1.8M/yr</td><td>Near RT</td></tr>
+        <tr><td>GH_RV</td><td>LNK_CUST_ORDER</td><td>Table</td><td>HUB_CUSTOMER + HUB_SALESORDER</td><td>4.2M/yr</td><td>Near RT</td></tr>
+        <tr><td>GH_RV</td><td>LNK_MAT_ORDER</td><td>Table</td><td>HUB_MATERIAL + HUB_SALESORDER</td><td>4.2M/yr</td><td>Near RT</td></tr>
+        <tr><td>GH_RV</td><td>SAT_CUSTOMER_S4</td><td>Table</td><td>STG_S4_CUSTOMER</td><td>42,000</td><td>Near RT</td></tr>
+        <tr><td>GH_BC</td><td>BV_CUSTOMER</td><td>Graphical View</td><td>HUB_CUSTOMER + SATs</td><td>48,000</td><td>Near RT</td></tr>
+        <tr><td>GH_BC</td><td>BV_MATERIAL</td><td>Graphical View</td><td>HUB_MATERIAL + SATs</td><td>28,500</td><td>Near RT</td></tr>
+        <tr><td>GH_BC</td><td>BV_DATE_DIM</td><td>SQL View</td><td>Generated calendar table</td><td>7,300 (20yr)</td><td>Static</td></tr>
+        <tr><td>GH_A_O2C</td><td>DS_O2C_ORDERFACT</td><td>Analytical Dataset</td><td>BV_* Views + STG_* Tables</td><td>4.2M/yr</td><td>Near RT</td></tr>
+        <tr><td>GH_A_O2C</td><td>AM_O2C_SALES</td><td>Analytical Model</td><td>DS_O2C_ORDERFACT + dims</td><td>—</td><td>Near RT</td></tr>
+        <tr><td>GH_A_SC</td><td>DS_SC_DEMAND</td><td>Analytical Dataset</td><td>STG_IBP_DEMAND + BV_MATERIAL</td><td>3.2M/yr</td><td>Hourly</td></tr>
+        <tr><td>GH_A_MFG</td><td>DS_MFG_OEE</td><td>Analytical Dataset</td><td>STG_OOE_* + BV_MATERIAL + BV_DATE_DIM</td><td>3.2M/yr</td><td>15 min</td></tr>
+        <tr><td>GH_A_COST</td><td>DS_COST_PRODUCT</td><td>Analytical Dataset</td><td>STG_S4_COSTING + BV_MATERIAL</td><td>850K/yr</td><td>Daily</td></tr>
+        <tr><td>GH_A_C360</td><td>DS_C360_PROFILE</td><td>Analytical Dataset</td><td>BV_CUSTOMER + SF + Order history</td><td>48,000</td><td>Hourly</td></tr>
+        <tr><td>GH_A_FC</td><td>DS_FC_GL</td><td>Analytical Dataset</td><td>STG_S4_GLPOSTING + GL Master</td><td>5.6M/yr</td><td>Near RT</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="subsection-title">5.4 Analytical Model Design</h2>
+
+    <p>Each analytics use case is exposed through an Analytical Model in Datasphere, which provides the semantic layer for consumption by SAP Analytics Cloud and other tools. The analytical model encapsulates business logic, measures, hierarchies, and variables that define the analytical experience.</p>
+
+    <p class="table-caption">Table 5.4 — Analytical Model Specifications</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Analytical Model</th>
+          <th>Primary Measure</th>
+          <th>Key Dimensions</th>
+          <th>Hierarchies</th>
+          <th>Variables</th>
+          <th>RLS Applied</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>AM_O2C_SALES</td><td>Net Revenue, Order Qty, Gross Margin</td><td>Customer, Material, Date, Sales Org, Channel</td><td>Product Line → Family → SKU; Customer Region → Territory</td><td>Date Range, Customer, Material, Sales Org</td><td>Sales Org, Region</td></tr>
+        <tr><td>AM_SC_DEMAND</td><td>Forecast Qty, Actual Qty, Forecast Accuracy</td><td>Material, Date, Plant, Forecast Type</td><td>Product Line → Family → SKU</td><td>Date Range, Plant, Product Line</td><td>Plant</td></tr>
+        <tr><td>AM_MFG_PERF</td><td>OEE %, Availability %, Performance %, Quality %</td><td>Equipment, Facility, Date, Material, Shift</td><td>Facility → Production Line → Equipment</td><td>Date Range, Facility, Equipment</td><td>Facility</td></tr>
+        <tr><td>AM_COST_MARGIN</td><td>Std Cost, Actual Cost, Margin %, Cost Variance</td><td>Material, Date, Cost Component, Customer</td><td>Cost Component → Sub-Component</td><td>Date Range, Product Line, Cost Component</td><td>Cost Center</td></tr>
+        <tr><td>AM_C360_SALES</td><td>Lifetime Revenue, Order Count, Avg Order Value, NPS</td><td>Customer, Date, Channel, Product Line, Rep</td><td>Customer Segment → Tier</td><td>Customer, Date Range, Region</td><td>Sales Rep, Region</td></tr>
+        <tr><td>AM_FIN_CONSOL</td><td>Revenue, COGS, OpEx, EBITDA, Net Income</td><td>GL Account, Company Code, Fiscal Period, Profit Center</td><td>CoA → Account Group → Account; Company → Profit Center</td><td>Fiscal Period, Company Code, Account</td><td>Company Code, Profit Center</td></tr>
+      </tbody>
+    </table>
+
+    <div class="page-footer">
+      <span>Confidential — Greenheck SAP Datasphere Implementation</span>
+      <span>Page 23</span>
+    </div>
+  </div>
+
+  <!-- ======================== SECTION 6: USE CASES ======================== -->
+  <div class="page-content">
+    <div class="page-header">
+      <span>Greenheck — SAP Datasphere Implementation</span>
+      <span>GH-SDS-IMP-2024-001</span>
+    </div>
+
+    <div class="section-number">Section 6</div>
+    <h1 class="section-title">End-to-End Use Cases</h1>
+
+    <h2 class="subsection-title">6.1 Use Case 1: Order-to-Cash Analytics</h2>
+
+    <h3 class="sub-subsection-title">6.1.1 Business Context</h3>
+    <p>Order-to-Cash (O2C) is the most critical business process for Greenheck, representing the end-to-end flow from customer order placement through order fulfillment, delivery, invoicing, and payment receipt. Currently, analyzing the complete O2C cycle requires extracting data from three separate systems (SAP ECC for orders and invoices, a logistics system for delivery status, and a separate AR aging report from the finance data mart), resulting in a 3–5 day turnaround for any cross-functional O2C analysis.</p>
+
+    <h3 class="sub-subsection-title">6.1.2 Business Questions Addressed</h3>
+    <ul>
+      <li>What is the end-to-end cycle time from order receipt to payment collection, segmented by customer, product line, and channel?</li>
+      <li>Where are the bottlenecks in the order fulfillment process that extend cycle time?</li>
+      <li>What is the order-to-delivery fill rate by product line and plant, and how is it trending over time?</li>
+      <li>What is the revenue leakage from cancelled orders, returns, and pricing discounts?</li>
+      <li>What is the Days Sales Outstanding (DSO) by customer segment, and which accounts require attention?</li>
+      <li>How does actual order mix compare to forecast assumptions used for production planning?</li>
+    </ul>
+
+    <h3 class="sub-subsection-title">6.1.3 Data Flow Design</h3>
+
+    <div class="arch-diagram">
+╔═══════════════════════════════════════════════════════════════════════╗
+║           USE CASE 1: ORDER-TO-CASH — DATA FLOW                      ║
+╠═══════════════════════════════════════════════════════════════════════╣
+║                                                                       ║
+║  SAP S/4HANA                                                          ║
+║  ├── VBAK (Sales Doc Header) ──────┐                                 ║
+║  ├── VBAP (Sales Doc Item) ────────┤                                 ║
+║  ├── VBRK (Billing Doc Header) ────┤                                 ║
+║  ├── VBRP (Billing Doc Item) ──────┼──▶ SAP CDC ──▶ STG_S4_*        ║
+║  ├── LIKP (Delivery Header) ───────┤                  Tables          ║
+║  ├── LIPS (Delivery Item) ─────────┤                  │               ║
+║  ├── BSID/BSAD (AR Open/Cleared) ──┘                  │               ║
+║                                                  Data Flow            ║
+║                                                  (Transform)          ║
+║                                                       │               ║
+║                                                       ▼               ║
+║                                              ┌─────────────────┐      ║
+║                                              │ Raw Vault Layer │      ║
+║                                              │ HUB_SALESORDER  │      ║
+║                                              │ HUB_DELIVERY    │      ║
+║                                              │ HUB_INVOICE     │      ║
+║                                              │ LNK_*           │      ║
+║                                              │ SAT_*           │      ║
+║                                              └────────┬────────┘      ║
+║                                                       │               ║
+║                                                       ▼               ║
+║                                              ┌─────────────────┐      ║
+║                                              │ Business Core   │      ║
+║                                              │ BV_CUSTOMER     │      ║
+║                                              │ BV_MATERIAL     │      ║
+║                                              │ BV_SALESORG     │      ║
+║                                              │ BV_DATE_DIM     │      ║
+║                                              └────────┬────────┘      ║
+║                                                       │               ║
+║                                                       ▼               ║
+║                                              ┌─────────────────┐      ║
+║                                              │ Analytics O2C   │      ║
+║                                              │                 │      ║
+║                                              │ DS_O2C_ORDER    │      ║
+║                                              │ DS_O2C_DELIVERY │      ║
+║                                              │ DS_O2C_INVOICE  │      ║
+║                                              │ DS_O2C_AR       │      ║
+║                                              │                 │      ║
+║                                              │ AM_O2C_SALES    │      ║
+║                                              │ (Analytical     │      ║
+║                                              │  Model)         │      ║
+║                                              └────────┬────────┘      ║
+║                                                       │               ║
+║                                                       ▼               ║
+║                                              ┌─────────────────┐      ║
+║                                              │ SAP Analytics   │      ║
+║                                              │ Cloud (SAC)     │      ║
+║                                              │                 │      ║
+║                                              │ • O2C Dashboard│      ║
+║                                              │ • Cycle Time   │      ║
+║                                              │   Analysis     │      ║
+║                                              │ • DSO Tracker  │      ║
+║                                              │ • Fill Rate    │      ║
+║                                              │   Report       │      ║
+║                                              └─────────────────┘      ║
+╚═══════════════════════════════════════════════════════════════════════╝
+    </div>
+
+    <h3 class="sub-subsection-title">6.1.4 Key Measures and Calculations</h3>
+
+    <p class="table-caption">Table 6.1 — O2C Analytical Model: Measure Definitions</p>
+    <table>
+      <thead>
+        <tr><th>Measure</th><th>Calculation Logic</th><th>Aggregation</th><th>Unit</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Gross Revenue</td><td>SUM(VBRP.NETWR) where VBRP.MWSBP &gt; 0</td><td>SUM</td><td>USD</td></tr>
+        <tr><td>Net Revenue</td><td>Gross Revenue - SUM(VBRP.KZWI* for discount conditions)</td><td>SUM</td><td>USD</td></tr>
+        <tr><td>Order Quantity</td><td>SUM(VBAP.KWMENG)</td><td>SUM</td><td>EA</td></tr>
+        <tr><td>Order-to-Delivery Cycle Time</td><td>AVG(LIPS.WADAT_IST - VBAK.ERDAT) in calendar days</td><td>AVG</td><td>Days</td></tr>
+        <tr><td>Delivery Fill Rate</td><td>SUM(LIPS.LFIMG) / SUM(VBAP.KWMENG) * 100</td><td>RATIO</td><td>%</td></tr>
+        <tr><td>On-Time Delivery Rate</td><td>COUNT(LIPS where WADAT_IST &lt;= VBAK.VDATN) / COUNT(all) * 100</td><td>RATIO</td><td>%</td></tr>
+        <tr><td>Invoice Amount</td><td>SUM(VBRK.NETWR)</td><td>SUM</td><td>USD</td></tr>
+        <tr><td>DSO (Days Sales Outstanding)</td><td>SUM(BSID.DMBTR) / (Net Revenue / 90)</td><td>CALCULATED</td><td>Days</td></tr>
+        <tr><td>Cancellation Rate</td><td>COUNT(VBAK where ABGRU &lt;&gt; '') / COUNT(all) * 100</td><td>RATIO</td><td>%</td></tr>
+        <tr><td>Return Rate</td><td>SUM(return qty) / SUM(delivered qty) * 100</td><td>RATIO</td><td>%</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="sub-subsection-title">6.1.5 Data Flow Configuration (Sample)</h3>
+
+    <div class="code-block"><span class="comment">// Data Flow: DF_O2C_ORDER_FACT</span>
+<span class="comment">// Purpose: Transform staging order data into O2C analytical fact</span>
+<span class="comment">// Space: GH_A_O2C</span>
+<span class="comment">// Schedule: Near Real-Time (CDC trigger)</span>
+
+<span class="keyword">SOURCE</span> STG_S4_SALESORDER_H (h)
+<span class="keyword">JOIN</span> STG_S4_SALESORDER_I (i)
+  <span class="keyword">ON</span> h.VBELN = i.VBELN
+<span class="keyword">JOIN</span> GH_BC.BV_CUSTOMER (c)
+  <span class="keyword">ON</span> h.KUNNR = c.CUST_BK
+<span class="keyword">JOIN</span> GH_BC.BV_MATERIAL (m)
+  <span class="keyword">ON</span> i.MATNR = m.MAT_BK
+<span class="keyword">JOIN</span> GH_BC.BV_DATE_DIM (d)
+  <span class="keyword">ON</span> CAST(h.ERDAT AS DATE) = d.DATE_KEY
+<span class="keyword">LEFT JOIN</span> STG_S4_DELIVERY (dl)
+  <span class="keyword">ON</span> i.VBELN = dl.VGBEL AND i.POSNR = dl.VGPOS
+
+<span class="keyword">TARGET</span> DS_O2C_ORDERFACT
+
+<span class="keyword">MAPPING</span>:
+  ORDER_BK      = h.VBELN
+  ORDER_LINE_BK = i.POSNR
+  CUST_BK       = h.KUNNR
+  MAT_BK        = i.MATNR
+  DATE_BK       = d.DATE_KEY
+  SALES_ORG_BK  = h.VKORG
+  CHANNEL_BK    = h.VTWEG
+  GROSS_REVENUE = i.NETWR * i.KURSK  <span class="comment">// Convert to local currency</span>
+  ORDER_QTY     = i.KWMENG
+  ORDER_DATE    = h.ERDAT
+  REQ_DEL_DATE  = h.VDATN
+  ACT_DEL_DATE  = dl.WADAT_IST
+  DELIVERY_BK   = dl.VBELN
+  DELIVERY_QTY  = dl.LFIMG
+  FILL_RATE_PCT = (dl.LFIMG / i.KWMENG) * 100
+  CYCLE_TIME    = DATEDIFF(day, h.ERDAT, dl.WADAT_IST)
+  ORDER_STATUS  = <span class="keyword">CASE</span>
+                    <span class="keyword">WHEN</span> dl.VBELN <span class="keyword">IS NOT NULL AND</span> h.FKSTK = 'C' <span class="keyword">THEN</span> <span class="string">'COMPLETE'</span>
+                    <span class="keyword">WHEN</span> dl.VBELN <span class="keyword">IS NOT NULL</span> <span class="keyword">THEN</span> <span class="string">'DELIVERED'</span>
+                    <span class="keyword">WHEN</span> h.FKSTK = 'A' <span class="keyword">THEN</span> <span class="string">'CONFIRMED'</span>
+                    <span class="keyword">ELSE</span> <span class="string">'OPEN'</span>
+                  <span class="keyword">END</span>
+
+<span class="keyword">FILTER</span>: h.ABSTK &lt;&gt; 'X'  <span class="comment">// Exclude rejected orders</span>
+
+<span class="keyword">QUALITY RULES</span>:
+  QR_O2C_01: GROSS_REVENUE >= 0  <span class="comment">// Flag negative revenue</span>
+  QR_O2C_02: CYCLE_TIME >= 0     <span class="comment">// Flag impossible dates</span>
+  QR_O2C_03: CUST_BK IS NOT NULL <span class="comment">// Flag orphan records</span></div>
+
+    <div class="page-footer">
+      <span>Confidential — Greenheck SAP Datasphere Implementation</span>
+      <span>Page 26</span>
+    </div>
+  </div>
+
+  <!-- ======================== USE CASE 1 CONTINUED ======================== -->
+  <div class="page-content">
+    <div class="page-header">
+      <span>Greenheck — SAP Datasphere Implementation</span>
+      <span>GH-SDS-IMP-2024-001</span>
+    </div>
+
+    <h3 class="sub-subsection-title">6.1.6 Analytical Model Configuration</h3>
+
+    <p>The AM_O2C_SALES analytical model is configured with the following structure:</p>
+
+    <p class="table-caption">Table 6.2 — AM_O2C_SALES Model Structure</p>
+    <table>
+      <thead>
+        <tr><th>Component</th><th>Type</th><th>Details</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Fact: DS_O2C_ORDERFACT</td><td>Analytical Dataset</td><td>Primary fact table with order line-level detail</td></tr>
+        <tr><td>Fact: DS_O2C_INVOICE</td><td>Analytical Dataset</td><td>Billing and AR data linked at header level</td></tr>
+        <tr><td>Dim: BV_CUSTOMER</td><td>Graphical View</td><td>Customer master with region, channel, segment attributes</td></tr>
+        <tr><td>Dim: BV_MATERIAL</td><td>Graphical View</td><td>Product master with product line, family, category</td></tr>
+        <tr><td>Dim: BV_DATE_DIM</td><td>SQL View</td><td>Standard calendar dimension (20-year range)</td></tr>
+        <tr><td>Dim: BV_SALESORG</td><td>Graphical View</td><td>Sales organization, division, distribution channel</td></tr>
+        <tr><td>Hierarchy: Product</td><td>Level Hierarchy</td><td>Product Line → Product Family → Material (3 levels)</td></tr>
+        <tr><td>Hierarchy: Customer Geography</td><td>Level Hierarchy</td><td>Region → Territory → State → Customer (4 levels)</td></tr>
+        <tr><td>Hierarchy: Date (Calendar)</td><td>Level Hierarchy</td><td>Year → Quarter → Month → Week → Date (5 levels)</td></tr>
+        <tr><td>Variable: Date Range</td><td>Input Variable</td><td>Date range selector (mandatory)</td></tr>
+        <tr><td>Variable: Customer</td><td>Input Variable</td><td>Single/multi-select customer filter (optional)</td></tr>
+        <tr><td>Variable: Product Line</td><td>Input Variable</td><td>Single/multi-select product line filter (optional)</td></tr>
+        <tr><td>Variable: Sales Org</td><td>Input Variable</td><td>Single-select sales org (optional, defaults via RLS)</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="sub-subsection-title">6.1.7 Row-Level Security Implementation</h3>
+
+    <p>Row-level security for the O2C model is implemented using Datasphere's native RLS capability, mapped to Greenheck's organizational hierarchy:</p>
+
+    <div class="code-block"><span class="comment">// RLS Rule: RLS_O2C_SALES_ORG</span>
+<span class="comment">// Applied to: AM_O2C_SALES</span>
+<span class="comment">// Principle: Users see only data for their assigned sales org(s)</span>
+
+<span class="keyword">ROLE</span>: SALES_ANALYST
+  <span class="keyword">RESTRICTION</span>: SALES_ORG_BK
+  <span class="keyword">FILTER</span>: <span class="keyword">SELECT</span> SALES_ORG_BK
+           <span class="keyword">FROM</span> GH_ADMIN.RLS_USER_ASSIGNMENT
+           <span class="keyword">WHERE</span> USER_ID = <span class="string">CURRENT_USER()</span>
+           <span class="keyword">AND</span> ASSIGNMENT_TYPE = <span class="string">'SALES_ORG'</span>
+
+<span class="keyword">ROLE</span>: REGIONAL_MANAGER
+  <span class="keyword">RESTRICTION</span>: SALES_REGION_BK
+  <span class="keyword">FILTER</span>: <span class="keyword">SELECT</span> SALES_REGION_BK
+           <span class="keyword">FROM</span> GH_ADMIN.RLS_USER_ASSIGNMENT
+           <span class="keyword">WHERE</span> USER_ID = <span class="string">CURRENT_USER()</span>
+           <span class="keyword">AND</span> ASSIGNMENT_TYPE = <span class="string">'REGION'</span>
+
+<span class="keyword">ROLE</span>: FINANCE_ANALYST
+  <span class="keyword">RESTRICTION</span>: COMPANY_CODE_BK
+  <span class="keyword">FILTER</span>: <span class="keyword">SELECT</span> COMPANY_CODE_BK
+           <span class="keyword">FROM</span> GH_ADMIN.RLS_USER_ASSIGNMENT
+           <span class="keyword">WHERE</span> USER_ID = <span class="string">CURRENT_USER()</span>
+           <span class="keyword">AND</span> ASSIGNMENT_TYPE = <span class="string">'COMPANY_CODE'</span>
+
+<span class="keyword">ROLE</span>: EXECUTIVE
+  <span class="comment">// No row-level restrictions — full access across all dimensions</span></div>
+
+    <h3 class="sub-subsection-title">6.1.8 Expected Dashboard Outputs</h3>
+    <p>The analytical model will feed the following SAP Analytics Cloud dashboards (developed in Phase 2):</p>
+
+    <p class="table-caption">Table 6.3 — O2C Dashboard Specifications</p>
+    <table>
+      <thead>
+        <tr><th>Dashboard</th><th>Primary Audience</th><th>Key Visualizations</th><th>Refresh</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>O2C Executive Summary</td><td>C-Suite, VPs</td><td>Revenue trend, fill rate gauge, DSO tracker, top/bottom customers</td><td>Daily</td></tr>
+        <tr><td>Order Pipeline Tracker</td><td>Sales Managers</td><td>Order backlog by stage, aging analysis, fill rate by plant</td><td>Near RT</td></tr>
+        <tr><td>Delivery Performance</td><td>Operations, Logistics</td><td>OTD trend, cycle time distribution, carrier performance</td><td>Near RT</td></tr>
+        <tr><td>AR Aging and Collections</td><td>Finance, Credit</td><td>AR aging buckets, DSO by segment, payment trend, at-risk accounts</td><td>Daily</td></tr>
+        <tr><td>Revenue Analysis</td><td>Finance, Sales Ops</td><td>Revenue by product line/channel/region, variance to plan, margin waterfall</td><td>Daily</td></tr>
+      </tbody>
+    </table>
+
+    <div class="page-footer">
+      <span>Confidential — Greenheck SAP Datasphere Implementation</span>
+      <span>Page 28</span>
+    </div>
+  </div>
+
+  <!-- ======================== USE CASE 2: SUPPLY CHAIN ======================== -->
+  <div class="page-content">
+    <div class="page-header">
+      <span>Greenheck — SAP Datasphere Implementation</span>
+      <span>GH-SDS-IMP-2024-001</span>
+    </div>
+
+    <h2 class="subsection-title">6.2 Use Case 2: Supply Chain Demand Planning</h2>
+
+    <h3 class="sub-subsection-title">6.2.1 Business Context</h3>
+    <p>Greenheck's supply chain planning process relies on demand forecasts generated in SAP IBP, but the ability to validate forecast accuracy, compare forecast versions, and correlate demand signals with actual order patterns has been severely limited by the lack of an integrated analytics layer. Planners currently export IBP data to Excel, manually join it with order data from SAP ECC, and perform analysis in spreadsheets — a process that takes 2–3 days per planning cycle and is prone to errors.</p>
+
+    <h3 class="sub-subsection-title">6.2.2 Business Questions Addressed</h3>
+    <ul>
+      <li>What is the forecast accuracy (MAPE, WAPE, Bias) at each product line, plant, and planning level?</li>
+      <li>How does the consensus forecast compare to statistical baseline and demand signal inputs?</li>
+      <li>What is the demand-supply gap by product family and time bucket?</li>
+      <li>Which products exhibit the highest forecast volatility, and what are the contributing factors?</li>
+      <li>How do actual orders compare to forecast by customer segment and distribution channel?</li>
+      <li>What is the inventory coverage (weeks of supply) by product line and plant?</li>
+    </ul>
+
+    <h3 class="sub-subsection-title">6.2.3 Source-to-Target Mapping</h3>
+
+    <p class="table-caption">Table 6.4 — Supply Chain: Source-to-Target Mapping (Key Fields)</p>
+    <table>
+      <thead>
+        <tr><th>Target Field</th><th>Source System</th><th>Source Table/Field</th><th>Transformation</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>DEMAND_FORECAST_BK</td><td>SAP IBP</td><td>SAPIBP_DEMAND.UID</td><td>Direct mapping</td></tr>
+        <tr><td>MAT_BK</td><td>SAP IBP</td><td>SAPIBP_DEMAND.PRODUCT_ID</td><td>Zero-pad to 18 chars, validate against BV_MATERIAL</td></tr>
+        <tr><td>PLANT_BK</td><td>SAP IBP</td><td>SAPIBP_DEMAND.LOCATION_ID</td><td>Map IBP location to S/4HANA plant code</td></tr>
+        <tr><td>PERIOD_BK</td><td>SAP IBP</td><td>SAPIBP_DEMAND.TIME_BUCKET</td><td>Convert IBP time bucket to standard date key</td></tr>
+        <tr><td>FORECAST_QTY</td><td>SAP IBP</td><td>SAPIBP_DEMAND.QTY</td><td>Direct mapping (base UOM)</td></tr>
+        <tr><td>FORECAST_VERSION</td><td>SAP IBP</td><td>SAPIBP_DEMAND.SCENARIO</td><td>Map: OP = Operational, CP = Consensus, BL = Baseline</td></tr>
+        <tr><td>ACTUAL_ORDER_QTY</td><td>SAP S/4HANA</td><td>VBAP.KWMENG (aggregated)</td><td>Aggregate by MAT_BK + PLANT_BK + PERIOD_BK</td></tr>
+        <tr><td>FORECAST_ACCURACY</td><td>Calculated</td><td>N/A</td><td>1 - ABS(FORECAST_QTY - ACTUAL_ORDER_QTY) / ACTUAL_ORDER_QTY</td></tr>
+        <tr><td>MAPE</td><td>Calculated</td><td>N/A</td><td>AVG(ABS(Actual - Forecast) / Actual) * 100</td></tr>
+        <tr><td>BIAS</td><td>Calculated</td><td>N/A</td
